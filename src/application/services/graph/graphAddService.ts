@@ -1,4 +1,4 @@
-import { STATUS } from '@domain/constants/status.ts';
+import { isStatus } from '@domain/guards/status.ts';
 import type { Status } from '@domain/constants/status.ts';
 import type { Project } from '@domain/entities/project.ts';
 import type { GraphAddServiceParams, GraphAddServiceResponse, IGraphAddService } from '@domain/services/iGraphAddService.ts';
@@ -26,9 +26,7 @@ export class GraphAddService implements IGraphAddService {
     }
 
     private validateStatus (status: Status): string | undefined {
-        const values = Object.values(STATUS) as readonly { value: string; description: string; }[];
-        const isValid = values.some(s => s.value === status);
-        if (!isValid) {
+        if (!isStatus(status)) {
             return 'Invalid project status';
         }
 
