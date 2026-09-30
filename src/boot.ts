@@ -17,3 +17,12 @@ export async function bootDatabase (): Promise<IDatabaseGateway> {
 
     return new MongoDBGateway(client.db());
 }
+
+export async function shutdownDatabase (): Promise<void> {
+    if (!client) {
+        return;
+    }
+
+    await client.close();
+    client = undefined;
+}

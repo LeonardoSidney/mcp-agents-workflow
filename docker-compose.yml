@@ -19,10 +19,11 @@ services:
   mongo:
     image: mongo:8
     container_name: mcp-agents-workflow-mongo
+    command: ["mongod", "--logpath", "/dev/null"]
     environment:
       MONGO_INITDB_DATABASE: mcp-agents-workflow
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand(\"ping\")' >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

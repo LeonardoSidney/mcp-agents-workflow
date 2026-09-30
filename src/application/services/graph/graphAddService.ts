@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { isStatus } from '@domain/guards/status.ts';
 import type { Status } from '@domain/constants/status.ts';
 import type { Project } from '@domain/entities/project.ts';
@@ -14,6 +15,7 @@ export class GraphAddService implements IGraphAddService {
         }
 
         const project: Project = {
+            id: randomUUID(),
             name: params.name,
             description: params.description,
             status: params.status

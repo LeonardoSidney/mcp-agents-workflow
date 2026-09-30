@@ -2,6 +2,10 @@
     "$schema": "https://json.schemastore.org/tsconfig",
     "extends": "@tsconfig/node24",
     "compilerOptions": {
+        "types": [
+            "node",
+            "jest"
+        ],
         "noUncheckedIndexedAccess": true,
         "noImplicitOverride": true,
         "noFallthroughCasesInSwitch": true,
@@ -22,11 +26,15 @@
             ],
             "@adapters/*": [
                 "./src/adapters/*"
+            ],
+            "@src/*": [
+                "./src/*"
             ]
         }
     },
     "include": [
-        "src"
+        "src",
+        "tests"
     ],
     "exclude": [
         "node_modules",
