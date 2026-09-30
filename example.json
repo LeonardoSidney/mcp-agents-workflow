@@ -1,0 +1,182 @@
+{
+    "graph_version": "1.0",
+    "project": {
+        "id": "project:1",
+        "type": "PROJECT",
+        "name": "Project Graph",
+        "description": "Graph used to persist project context, decisions, discoveries and work performed by agents.",
+        "status": "in_progress"
+    },
+    "nodes": [
+        {
+            "id": "task:1",
+            "type": "TASK",
+            "status": "completed",
+            "title": "Create project graph file",
+            "description": "Create the project graph file that will contain the initial project graph structure.",
+            "created_by": "agent:1"
+        },
+        {
+            "id": "observation:1",
+            "type": "OBSERVATION",
+            "status": "completed",
+            "description": "The expected project graph file did not exist when the task started.",
+            "created_by": "agent:1"
+        },
+        {
+            "id": "user-decision:1",
+            "type": "USER_DECISION",
+            "status": "completed",
+            "description": "The absence of the file was intentional. The agent is authorized to create the file because creating the graph is the purpose of the current task.",
+            "created_by": "user"
+        },
+        {
+            "id": "attempt:1",
+            "type": "ATTEMPT",
+            "status": "completed",
+            "description": "Attempted to determine whether the missing file should be created or whether the absence indicated an error.",
+            "created_by": "agent:1"
+        },
+        {
+            "id": "decision:1",
+            "type": "AGENT_DECISION",
+            "status": "completed",
+            "description": "Create the missing project graph file after user validation.",
+            "created_by": "agent:1"
+        },
+        {
+            "id": "artifact:1",
+            "type": "ARTIFACT",
+            "status": "completed",
+            "path": "project-graph.json",
+            "description": "Created the initial project graph file using graph version 1.0.",
+            "created_by": "agent:1"
+        },
+        {
+            "id": "solution:1",
+            "type": "SOLUTION",
+            "status": "completed",
+            "description": "The project graph file was created successfully with the initial project, node, edge, type and status definitions.",
+            "created_by": "agent:1"
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge:1",
+            "from": "task:1",
+            "to": "observation:1",
+            "type": "DISCOVERED_BY",
+            "description": "The missing file was discovered while executing the task."
+        },
+        {
+            "id": "edge:2",
+            "from": "observation:1",
+            "to": "user-decision:1",
+            "type": "USER_VALIDATE",
+            "description": "The user clarified that the missing file was intentionally absent and should be created."
+        },
+        {
+            "id": "edge:3",
+            "from": "user-decision:1",
+            "to": "decision:1",
+            "type": "VALIDATES",
+            "description": "The user's clarification authorized the agent to create the file."
+        },
+        {
+            "id": "edge:4",
+            "from": "task:1",
+            "to": "attempt:1",
+            "type": "ATTEMPTED",
+            "description": "The agent performed an attempt to determine the correct action."
+        },
+        {
+            "id": "edge:5",
+            "from": "attempt:1",
+            "to": "decision:1",
+            "type": "SOLVED_BY",
+            "description": "The uncertainty was resolved by the user's clarification and the resulting agent decision."
+        },
+        {
+            "id": "edge:6",
+            "from": "decision:1",
+            "to": "artifact:1",
+            "type": "IMPLEMENTS",
+            "description": "The artifact was created as a consequence of the agent's decision."
+        },
+        {
+            "id": "edge:7",
+            "from": "artifact:1",
+            "to": "solution:1",
+            "type": "VALIDATES",
+            "description": "The successfully created artifact satisfies the original task."
+        },
+        {
+            "id": "edge:8",
+            "from": "solution:1",
+            "to": "task:1",
+            "type": "COMPLETES",
+            "description": "The solution completes the original task."
+        }
+    ],
+    "node_types": {
+        "PROJECT": "Root container for all project knowledge.",
+        "GOAL": "Desired project outcome.",
+        "REQUIREMENT": "Explicit project requirement.",
+        "USER_DECISION": "Decision or clarification explicitly provided by the user.",
+        "AGENT_DECISION": "Decision made by an agent while executing work.",
+        "TASK": "Unit of work that an agent can execute.",
+        "SUBTASK": "Task that belongs to another task.",
+        "AGENT": "Agent participating in the project.",
+        "OBSERVATION": "Something directly observed during execution.",
+        "FACT": "Information considered established and reliable.",
+        "HYPOTHESIS": "Possible explanation or assumption that has not been validated.",
+        "DISCOVERY": "New relevant information discovered during execution.",
+        "ATTEMPT": "An action or approach attempted to solve a task.",
+        "FAILURE": "An attempt that did not achieve its intended result.",
+        "SOLUTION": "An approach that successfully solves a problem or task.",
+        "REJECTED_APPROACH": "An approach explicitly rejected or determined unsuitable.",
+        "CONSTRAINT": "Limitation that affects possible solutions.",
+        "QUESTION": "Unresolved question requiring an answer.",
+        "CONFLICT": "Contradiction between decisions, facts or requirements.",
+        "ARTIFACT": "File, code, document or other project output.",
+        "COMPONENT": "Logical or technical component of the project.",
+        "DEPENDENCY": "External or internal dependency required by the project."
+    },
+    "edge_types": {
+        "CONTAINS": "Parent contains child.",
+        "DEPENDS_ON": "Source requires target.",
+        "USER_VALIDATE": "User clarification validates or resolves an agent observation or decision.",
+        "BLOCKS": "Source prevents target from progressing.",
+        "RELATED_TO": "Generic semantic relationship.",
+        "DERIVED_FROM": "Source was derived from target.",
+        "DISCOVERED_BY": "Information was discovered while executing the source.",
+        "CREATED_BY": "Artifact or information was created by an agent.",
+        "ATTEMPTED": "Task led to an attempt.",
+        "FAILED": "Attempt resulted in failure.",
+        "SOLVED_BY": "Problem was resolved by the target.",
+        "REJECTED": "Approach was rejected.",
+        "SUPERSEDES": "New decision replaces an older decision.",
+        "CONFLICTS_WITH": "Source conflicts with target.",
+        "CONSTRAINED_BY": "Source is constrained by target.",
+        "ANSWERS": "Source answers target question.",
+        "AFFECTS": "Source affects target.",
+        "IMPLEMENTS": "Source implements target decision or requirement.",
+        "VALIDATES": "Source validates target.",
+        "INVALIDATES": "Source invalidates target.",
+        "ASSIGNED_TO": "Work is assigned to an agent.",
+        "PART_OF": "Source belongs to target.",
+        "COMPLETES": "Source completes target."
+    },
+    "agents": [
+        {
+            "id": "agent:1",
+            "role": "implementation_agent",
+            "description": "Agent responsible for executing the current task."
+        }
+    ],
+    "metadata": {
+        "created_at": null,
+        "updated_at": null,
+        "created_by": "system"
+    }
+}
