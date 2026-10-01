@@ -1,0 +1,12 @@
+import { McpServer } from '@modelcontextprotocol/server';
+import { registerGraphTools } from './mcp/graphTools.ts';
+import { registerNodeTools } from './mcp/nodeTools.ts';
+
+export function createServer (): McpServer {
+    const server = new McpServer({ name: 'mcp-agents-workflow', version: '1.0.0' });
+
+    registerGraphTools(server);
+    registerNodeTools(server);
+
+    return server;
+}

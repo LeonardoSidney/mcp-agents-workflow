@@ -1,20 +1,26 @@
+import type { ILogger } from '@domain/logger.ts';
 import type { IGraphAddService } from '@domain/services/iGraphAddService.ts';
 import type { IProjectRepository } from '@domain/repository/iProjectRepository.ts';
 import type { GraphAddUseCaseParams, GraphAddUseCaseResponse, IGraphAddUseCase } from '@domain/use-cases/iGraphAddUseCase.ts';
 
 export class GraphAddUseCase implements IGraphAddUseCase {
+    private readonly logger: ILogger;
     private readonly graphAddService: IGraphAddService;
     private readonly projectRepository: IProjectRepository;
 
     constructor (
+        logger: ILogger,
         graphAddService: IGraphAddService,
         projectRepository: IProjectRepository
     ) {
+        this.logger = logger;
         this.graphAddService = graphAddService;
         this.projectRepository = projectRepository;
     }
 
     async execute (params: GraphAddUseCaseParams): Promise<GraphAddUseCaseResponse> {
+        this.logger.info('Executing GraphAddUseCase::execute');
+
         const validationError = this.validate(params);
         if (validationError) {
             return {

@@ -1,17 +1,29 @@
+import { GraphAddNodeController } from '@adapters/controllers/graph/graphAddNodeController.ts';
 import { GraphAddController } from '@adapters/controllers/graph/graphAddProjectController.ts';
+import { GraphDeleteNodeController } from '@adapters/controllers/graph/graphDeleteNodeController.ts';
 import { GraphDeleteProjectController } from '@adapters/controllers/graph/graphDeleteProjectController.ts';
+import { GraphGetNodeController } from '@adapters/controllers/graph/graphGetNodeController.ts';
+import { GraphGetNodesController } from '@adapters/controllers/graph/graphGetNodesController.ts';
 import { GraphGetProjectController } from '@adapters/controllers/graph/graphGetProjectController.ts';
 import { GraphGetProjectsController } from '@adapters/controllers/graph/graphGetProjectsController.ts';
+import { ConsoleLogger } from '@adapters/logger/consoleLogger.ts';
+import { NodeRepository } from '@application/repository/nodeRepository.ts';
 import { ProjectRepository } from '@application/repository/projectRepository.ts';
+import { GraphAddNodeService } from '@application/services/graph/graphAddNodeService.ts';
 import { GraphAddService } from '@application/services/graph/graphAddService.ts';
+import { GraphAddNodeUseCase } from '@application/use-cases/graph/graphAddNodeUseCase.ts';
 import { GraphAddUseCase } from '@application/use-cases/graph/graphAddUseCase.ts';
+import { GraphDeleteNodeUseCase } from '@application/use-cases/graph/graphDeleteNodeUseCase.ts';
 import { GraphDeleteProjectUseCase } from '@application/use-cases/graph/graphDeleteProjectUseCase.ts';
+import { GraphGetNodeUseCase } from '@application/use-cases/graph/graphGetNodeUseCase.ts';
+import { GraphGetNodesUseCase } from '@application/use-cases/graph/graphGetNodesUseCase.ts';
 import { GraphGetProjectUseCase } from '@application/use-cases/graph/graphGetProjectUseCase.ts';
 import { GraphGetProjectsUseCase } from '@application/use-cases/graph/graphGetProjectsUseCase.ts';
 import type { IDatabaseGateway } from '@domain/gateways/iDatabaseGateway.ts';
 import { bootDatabase } from './boot.ts';
 
 let databaseInstance: IDatabaseGateway | undefined;
+const logger = new ConsoleLogger();
 
 export async function database (): Promise<IDatabaseGateway> {
     if (databaseInstance !== undefined) {
@@ -26,31 +38,58 @@ export async function graphAddController (): Promise<GraphAddController> {
     const databaseGateway = await database();
     const projectRepository = new ProjectRepository(databaseGateway);
     const graphAddService = new GraphAddService();
-    const graphAddUseCase = new GraphAddUseCase(graphAddService, projectRepository);
-
-    return new GraphAddController(graphAddUseCase);
+    const graphAddUseCase = new GraphAddUseCase(logger, graphAddService, projectRepository);
+    return new GraphAddController(logger, graphAddUseCase);
 }
 
 export async function graphGetProjectsController (): Promise<GraphGetProjectsController> {
     const databaseGateway = await database();
     const projectRepository = new ProjectRepository(databaseGateway);
-    const graphGetProjectsUseCase = new GraphGetProjectsUseCase(projectRepository);
-
-    return new GraphGetProjectsController(graphGetProjectsUseCase);
+    const graphGetProjectsUseCase = new GraphGetProjectsUseCase(logger, projectRepository);
+    return new GraphGetProjectsController(logger, graphGetProjectsUseCase);
 }
 
 export async function graphGetProjectController (): Promise<GraphGetProjectController> {
     const databaseGateway = await database();
     const projectRepository = new ProjectRepository(databaseGateway);
-    const graphGetProjectUseCase = new GraphGetProjectUseCase(projectRepository);
-
-    return new GraphGetProjectController(graphGetProjectUseCase);
+    const graphGetProjectUseCase = new GraphGetProjectUseCase(logger, projectRepository);
+    return new GraphGetProjectController(logger, graphGetProjectUseCase);
 }
 
 export async function graphDeleteProjectController (): Promise<GraphDeleteProjectController> {
     const databaseGateway = await database();
     const projectRepository = new ProjectRepository(databaseGateway);
-    const graphDeleteProjectUseCase = new GraphDeleteProjectUseCase(projectRepository);
+    const graphDeleteProjectUseCase = new GraphDeleteProjectUseCase(logger, projectRepository);
+    return new GraphDeleteProjectController(logger, graphDeleteProjectUseCase);
+}
 
-    return new GraphDeleteProjectController(graphDeleteProjectUseCase);
+export async function graphAddNodeController (): Promise<GraphAddNodeController> {
+    const databaseGateway = await database();
+    const projectRepository = new ProjectRepository(databaseGateway);
+    const nodeRepository = new NodeRepository(databaseGateway);
+    const graphAddNodeService = new GraphAddNodeService();
+    const graphAddNodeUseCase = new GraphAddNodeUseCase(logger, graphAddNodeService, projectRepository, nodeRepository);
+    return new GraphAddNodeController(logger, graphAddNodeUseCase);
+}
+
+export async function graphGetNodesController (): Promise<GraphGetNodesController> {
+    const databaseGateway = await database();
+    const projectRepository = new ProjectRepository(databaseGateway);
+    const nodeRepository = new NodeRepository(databaseGateway);
+    const graphGetNodesUseCase = new GraphGetNodesUseCase(logger, projectRepository, nodeRepository);
+    return new GraphGetNodesController(logger, graphGetNodesUseCase);
+}
+
+export async function graphGetNodeController (): Promise<GraphGetNodeController> {
+    const databaseGateway = await database();
+    const nodeRepository = new NodeRepository(databaseGateway);
+    const graphGetNodeUseCase = new GraphGetNodeUseCase(logger, nodeRepository);
+    return new GraphGetNodeController(logger, graphGetNodeUseCase);
+}
+
+export async function graphDeleteNodeController (): Promise<GraphDeleteNodeController> {
+    const databaseGateway = await database();
+    const nodeRepository = new NodeRepository(databaseGateway);
+    const graphDeleteNodeUseCase = new GraphDeleteNodeUseCase(logger, nodeRepository);
+    return new GraphDeleteNodeController(logger, graphDeleteNodeUseCase);
 }

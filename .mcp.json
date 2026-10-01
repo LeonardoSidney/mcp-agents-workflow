@@ -1,0 +1,19 @@
+{
+    "mcpServers": {
+        "mcp-agents-workflow": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "tsx",
+                "src/index.ts"
+            ],
+            "env": {
+                "MONGODB_URI": "mongodb://127.0.0.1:27017/mcp-agents-workflow"
+            }
+        },
+        "mcp-agents-workflow-http": {
+            "type": "http",
+            "url": "http://localhost:4000/mcp"
+        }
+    }
+}

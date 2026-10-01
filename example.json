@@ -1,7 +1,7 @@
 {
     "graph_version": "1.0",
     "project": {
-        "id": "project:1",
+        "id": "uuidv4",
         "type": "PROJECT",
         "name": "Project Graph",
         "description": "Graph used to persist project context, decisions, discoveries and work performed by agents.",
@@ -9,7 +9,7 @@
     },
     "nodes": [
         {
-            "id": "task:1",
+            "id": "uuidv4",
             "type": "TASK",
             "status": "completed",
             "title": "Create project graph file",
@@ -17,14 +17,14 @@
             "created_by": "agent:1"
         },
         {
-            "id": "observation:1",
+            "id": "uuidv4",
             "type": "OBSERVATION",
             "status": "completed",
             "description": "The expected project graph file did not exist when the task started.",
             "created_by": "agent:1"
         },
         {
-            "id": "user-decision:1",
+            "id": "uuidv4",
             "type": "USER_DECISION",
             "status": "completed",
             "description": "The absence of the file was intentional. The agent is authorized to create the file because creating the graph is the purpose of the current task.",
@@ -38,14 +38,14 @@
             "created_by": "agent:1"
         },
         {
-            "id": "decision:1",
+            "id": "uuidv4",
             "type": "AGENT_DECISION",
             "status": "completed",
             "description": "Create the missing project graph file after user validation.",
             "created_by": "agent:1"
         },
         {
-            "id": "artifact:1",
+            "id": "uuidv4",
             "type": "ARTIFACT",
             "status": "completed",
             "path": "project-graph.json",
@@ -53,7 +53,7 @@
             "created_by": "agent:1"
         },
         {
-            "id": "solution:1",
+            "id": "uuidv4",
             "type": "SOLUTION",
             "status": "completed",
             "description": "The project graph file was created successfully with the initial project, node, edge, type and status definitions.",
@@ -63,28 +63,28 @@
     "edges": [
         {
             "id": "edge:1",
-            "from": "task:1",
-            "to": "observation:1",
+            "from": "uuidv4",
+            "to": "uuidv4",
             "type": "DISCOVERED_BY",
             "description": "The missing file was discovered while executing the task."
         },
         {
             "id": "edge:2",
-            "from": "observation:1",
-            "to": "user-decision:1",
+            "from": "uuidv4",
+            "to": "uuidv4",
             "type": "USER_VALIDATE",
             "description": "The user clarified that the missing file was intentionally absent and should be created."
         },
         {
             "id": "edge:3",
-            "from": "user-decision:1",
-            "to": "decision:1",
+            "from": "uuidv4",
+            "to": "uuidv4",
             "type": "VALIDATES",
             "description": "The user's clarification authorized the agent to create the file."
         },
         {
             "id": "edge:4",
-            "from": "task:1",
+            "from": "uuidv4",
             "to": "attempt:1",
             "type": "ATTEMPTED",
             "description": "The agent performed an attempt to determine the correct action."
@@ -92,28 +92,28 @@
         {
             "id": "edge:5",
             "from": "attempt:1",
-            "to": "decision:1",
+            "to": "uuidv4",
             "type": "SOLVED_BY",
             "description": "The uncertainty was resolved by the user's clarification and the resulting agent decision."
         },
         {
             "id": "edge:6",
-            "from": "decision:1",
-            "to": "artifact:1",
+            "from": "uuidv4",
+            "to": "uuidv4",
             "type": "IMPLEMENTS",
             "description": "The artifact was created as a consequence of the agent's decision."
         },
         {
             "id": "edge:7",
-            "from": "artifact:1",
-            "to": "solution:1",
+            "from": "uuidv4",
+            "to": "uuidv4",
             "type": "VALIDATES",
             "description": "The successfully created artifact satisfies the original task."
         },
         {
             "id": "edge:8",
-            "from": "solution:1",
-            "to": "task:1",
+            "from": "uuidv4",
+            "to": "uuidv4",
             "type": "COMPLETES",
             "description": "The solution completes the original task."
         }
