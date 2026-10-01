@@ -21,6 +21,98 @@ describe('MCP server - node lifecycle', () => {
         });
     });
 
+    test('updates a node status and description, leaving other fields untouched', async () => {
+        const graph = await addProject('Update Project', 'Project used to update a node', 'waiting_goal');
+        const node = await addNode(graph.id, 'TASK', 'Build the server', 'Build the MCP server');
+
+        const result = await callTool('graph-update-node', {
+            id: node.id,
+            status: 'completed',
+            description: 'MCP server running and tests green'
+        });
+
+        expect(result.isError).toBeFalsy();
+        const jsonStart = textOf(result).indexOf('{');
+        const updated = JSON.parse(textOf(result).slice(jsonStart)) as Node;
+        expect(updated).toMatchObject({
+            id: node.id,
+            graphId: graph.id,
+            type: 'TASK',
+            title: 'Build the server',
+            status: 'completed',
+            description: 'MCP server running and tests green'
+        });
+
+        const saved = await nodesCollection.find({ id: node.id }).toArray();
+        expect(saved).toHaveLength(1);
+        const stored = saved[0];
+        if (!stored) {
+            throw new Error(`Expected the node to be stored: ${node.id}`);
+        }
+
+        expect(stored).toMatchObject({ status: 'completed', title: 'Build the server' });
+    });
+
+    test('replaces the whole links list on update, an empty list clears links', async () => {
+        const graph = await addProject('Re-link Project', 'Project used to replace links', 'waiting_goal');
+        const goal = await addNode(graph.id, 'GOAL', 'Main goal', 'Main goal of the project');
+        const related = await addNode(graph.id, 'FACT', 'Known fact', 'Established fact');
+        const task = await addNode(graph.id, 'TASK', 'Dependent task', 'Task linked to the goal', [
+            { type: 'PART_OF', targetId: goal.id }
+        ]);
+
+        const relinked = await callTool('graph-update-node', {
+            id: task.id,
+            links: [{ type: 'DERIVED_FROM', targetId: related.id }]
+        });
+        expect(relinked.isError).toBeFalsy();
+
+        const cleared = await callTool('graph-update-node', { id: task.id, links: [] });
+        expect(cleared.isError).toBeFalsy();
+
+        const saved = await nodesCollection.find({ id: task.id }).toArray();
+        const stored = saved[0];
+        if (!stored) {
+            throw new Error(`Expected the task node to be stored: ${task.id}`);
+        }
+
+        expect(stored.links).toEqual([]);
+    });
+
+    test('refuses to update a node that does not exist', async () => {
+        const missingNodeId = '00000000-0000-4000-8000-000000000000';
+
+        const result = await callTool('graph-update-node', { id: missingNodeId, status: 'completed' });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('Node not found');
+    });
+
+    test('refuses to update a node without any field to change', async () => {
+        const graph = await addProject('Empty Update Project', 'Project used for an empty update', 'waiting_goal');
+        const node = await addNode(graph.id, 'GOAL', 'Goal', 'A goal');
+
+        const result = await callTool('graph-update-node', { id: node.id });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('At least one field must be provided');
+    });
+
+    test('refuses update links to a target node of another graph', async () => {
+        const firstGraph = await addProject('First Update Graph', 'First graph', 'waiting_goal');
+        const secondGraph = await addProject('Second Update Graph', 'Second graph', 'waiting_goal');
+        const foreignNode = await addNode(firstGraph.id, 'GOAL', 'Foreign goal', 'Goal from another graph');
+        const task = await addNode(secondGraph.id, 'TASK', 'Local task', 'Task of the second graph');
+
+        const result = await callTool('graph-update-node', {
+            id: task.id,
+            links: [{ type: 'RELATED_TO', targetId: foreignNode.id }]
+        });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('does not belong to graph');
+    });
+
     test('refuses to add a node for a graph that does not exist', async () => {
         const missingGraphId = '00000000-0000-4000-8000-000000000000';
 
@@ -153,5 +245,29 @@ describe('MCP server - node lifecycle', () => {
 
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('Node not found');
+    });
+
+    test('survivor of a cascade link removal surfaces as the most recent node', async () => {
+        const graph = await addProject('Cascade Project', 'Project used to test cascade ordering', 'waiting_goal');
+        const goal = await addNode(graph.id, 'GOAL', 'Cascaded goal', 'Goal that will be deleted');
+        const task = await addNode(graph.id, 'TASK', 'Linked task', 'Task linked to the goal', [
+            { type: 'PART_OF', targetId: goal.id }
+        ]);
+        const fresh = await addNode(graph.id, 'FACT', 'Fresh fact', 'Most recent node before the cascade');
+
+        const deleteResult = await callTool('graph-delete-node', { id: goal.id });
+        expect(deleteResult.isError).toBeFalsy();
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id });
+        expect(result.isError).toBeFalsy();
+
+        const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; }[];
+        const mostRecent = nodes[0];
+        if (!mostRecent) {
+            throw new Error('Expected at least one node in the list');
+        }
+
+        expect(mostRecent.id).toEqual(task.id);
+        expect(nodes.map(node => node.id)).toEqual([task.id, fresh.id]);
     });
 });

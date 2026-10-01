@@ -10,7 +10,8 @@ import type {
     ListGraphGatewayParams,
     NodeDocument,
     ProjectDocument,
-    RemoveNodeLinksGatewayParams
+    RemoveNodeLinksGatewayParams,
+    UpdateNodeGatewayParams
 } from '@domain/gateways/iDatabaseGateway.ts';
 
 export class MongoDBGateway implements IDatabaseGateway {
@@ -54,6 +55,27 @@ export class MongoDBGateway implements IDatabaseGateway {
         await collection.insertOne(params.node);
     }
 
+    async updateNode (params: UpdateNodeGatewayParams): Promise<boolean> {
+        const collection = this.database.collection<NodeDocument>('nodes');
+        const { node } = params;
+        const now = new Date();
+
+        const result = await collection.updateOne(
+            { id: node.id },
+            {
+                $set: {
+                    status: node.status,
+                    title: node.title,
+                    description: node.description,
+                    links: node.links,
+                    updated_at: now
+                }
+            }
+        );
+
+        return result.matchedCount > 0;
+    }
+
     async listNode (params: ListNodeGatewayParams): Promise<NodeDocument | null> {
         const collection = this.database.collection<NodeDocument>('nodes');
 
@@ -79,10 +101,14 @@ export class MongoDBGateway implements IDatabaseGateway {
 
     async removeNodeLinks (params: RemoveNodeLinksGatewayParams): Promise<void> {
         const collection = this.database.collection<NodeDocument>('nodes');
+        const now = new Date();
 
         await collection.updateMany(
-            { graph_id: params.graphId },
-            { $pull: { links: { targetId: params.targetId } } }
+            { graph_id: params.graphId, links: { $elemMatch: { targetId: params.targetId } } },
+            {
+                $pull: { links: { targetId: params.targetId } },
+                $set: { updated_at: now }
+            }
         );
     }
 }

@@ -4,6 +4,7 @@ export interface IDatabaseGateway {
     listGraph (params: ListGraphGatewayParams): Promise<ProjectDocument | null>;
     deleteGraph (params: DeleteGraphGatewayParams): Promise<boolean>;
     addNode (params: AddNodeGatewayParams): Promise<void>;
+    updateNode (params: UpdateNodeGatewayParams): Promise<boolean>;
     listNode (params: ListNodeGatewayParams): Promise<NodeDocument | null>;
     listNodes (params: ListNodesGatewayParams): Promise<NodeDocument[]>;
     deleteNode (params: DeleteNodeGatewayParams): Promise<boolean>;
@@ -23,6 +24,10 @@ export type DeleteGraphGatewayParams = {
 };
 
 export type AddNodeGatewayParams = {
+    node: NodeDocument;
+};
+
+export type UpdateNodeGatewayParams = {
     node: NodeDocument;
 };
 

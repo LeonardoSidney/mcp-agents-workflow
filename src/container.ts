@@ -6,11 +6,13 @@ import { GraphGetNodeController } from '@adapters/controllers/graph/graphGetNode
 import { GraphGetNodesController } from '@adapters/controllers/graph/graphGetNodesController.ts';
 import { GraphGetProjectController } from '@adapters/controllers/graph/graphGetProjectController.ts';
 import { GraphGetProjectsController } from '@adapters/controllers/graph/graphGetProjectsController.ts';
+import { GraphUpdateNodeController } from '@adapters/controllers/graph/graphUpdateNodeController.ts';
 import { ConsoleLogger } from '@adapters/logger/consoleLogger.ts';
 import { NodeRepository } from '@application/repository/nodeRepository.ts';
 import { ProjectRepository } from '@application/repository/projectRepository.ts';
 import { GraphAddNodeService } from '@application/services/graph/graphAddNodeService.ts';
 import { GraphAddService } from '@application/services/graph/graphAddService.ts';
+import { GraphUpdateNodeService } from '@application/services/graph/graphUpdateNodeService.ts';
 import { GraphAddNodeUseCase } from '@application/use-cases/graph/graphAddNodeUseCase.ts';
 import { GraphAddUseCase } from '@application/use-cases/graph/graphAddUseCase.ts';
 import { GraphDeleteNodeUseCase } from '@application/use-cases/graph/graphDeleteNodeUseCase.ts';
@@ -19,6 +21,7 @@ import { GraphGetNodeUseCase } from '@application/use-cases/graph/graphGetNodeUs
 import { GraphGetNodesUseCase } from '@application/use-cases/graph/graphGetNodesUseCase.ts';
 import { GraphGetProjectUseCase } from '@application/use-cases/graph/graphGetProjectUseCase.ts';
 import { GraphGetProjectsUseCase } from '@application/use-cases/graph/graphGetProjectsUseCase.ts';
+import { GraphUpdateNodeUseCase } from '@application/use-cases/graph/graphUpdateNodeUseCase.ts';
 import type { IDatabaseGateway } from '@domain/gateways/iDatabaseGateway.ts';
 import { bootDatabase } from './boot.ts';
 
@@ -70,6 +73,14 @@ export async function graphAddNodeController (): Promise<GraphAddNodeController>
     const graphAddNodeService = new GraphAddNodeService();
     const graphAddNodeUseCase = new GraphAddNodeUseCase(logger, graphAddNodeService, projectRepository, nodeRepository);
     return new GraphAddNodeController(logger, graphAddNodeUseCase);
+}
+
+export async function graphUpdateNodeController (): Promise<GraphUpdateNodeController> {
+    const databaseGateway = await database();
+    const nodeRepository = new NodeRepository(databaseGateway);
+    const graphUpdateNodeService = new GraphUpdateNodeService();
+    const graphUpdateNodeUseCase = new GraphUpdateNodeUseCase(logger, graphUpdateNodeService, nodeRepository);
+    return new GraphUpdateNodeController(logger, graphUpdateNodeUseCase);
 }
 
 export async function graphGetNodesController (): Promise<GraphGetNodesController> {
