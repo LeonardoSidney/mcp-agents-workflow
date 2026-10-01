@@ -1,4 +1,5 @@
 import type { GraphUpdateNodeControllerParams, GraphUpdateNodeControllerResponse, IGraphUpdateNodeController } from '@domain/controllers/iGraphUpdateNodeController.ts';
+import { toNodeSummary } from '@domain/entities/node.ts';
 import type { ILogger } from '@domain/logger.ts';
 import type { IGraphUpdateNodeUseCase } from '@domain/use-cases/iGraphUpdateNodeUseCase.ts';
 
@@ -21,9 +22,11 @@ export class GraphUpdateNodeController implements IGraphUpdateNodeController {
 
         const response = await this.useCase.execute({ id, title, description, status, links });
 
+        const node = response.node ? toNodeSummary(response.node) : undefined;
+
         return {
             success: response.success,
-            node: response.node,
+            node,
             error: response.error
         };
     }

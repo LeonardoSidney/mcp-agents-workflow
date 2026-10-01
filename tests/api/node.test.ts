@@ -1,5 +1,13 @@
+import { randomUUID } from 'node:crypto';
 import type { Node } from '@domain/entities/node.ts';
 import { mcpTestHarness } from './mcpHarness.ts';
+
+type SearchHit = {
+    node: { id: string; };
+    titleScore: number;
+    descriptionScore: number;
+    score: number;
+};
 
 const { addNode, addProject, callTool, fetchNode, nodesCollection, textOf } = mcpTestHarness();
 
@@ -210,6 +218,23 @@ describe('MCP server - node lifecycle', () => {
         });
     });
 
+    test('keeps node timestamps out of tool responses', async () => {
+        const graph = await addProject('Stamps Project', 'Project used to check exposed fields', 'waiting_goal');
+        const node = await addNode(graph.id, 'TASK', 'Stamped task', 'Task used to check exposed fields');
+
+        const fetched = await fetchNode(node.id);
+        expect(fetched.isError).toBeFalsy();
+        expect(textOf(fetched)).not.toContain('createdAt');
+        expect(textOf(fetched)).not.toContain('updatedAt');
+        expect(textOf(fetched)).not.toContain('created_at');
+        expect(textOf(fetched)).not.toContain('updated_at');
+
+        const listed = await callTool('graph-get-nodes', { graphId: graph.id });
+        expect(listed.isError).toBeFalsy();
+        expect(textOf(listed)).not.toContain('createdAt');
+        expect(textOf(listed)).not.toContain('created_at');
+    });
+
     test('removes links pointing to a deleted node', async () => {
         const graph = await addProject('Delete Project', 'Project used to delete a node', 'waiting_goal');
         const goal = await addNode(graph.id, 'GOAL', 'Removable goal', 'Goal that will be deleted');
@@ -269,5 +294,173 @@ describe('MCP server - node lifecycle', () => {
 
         expect(mostRecent.id).toEqual(task.id);
         expect(nodes.map(node => node.id)).toEqual([task.id, fresh.id]);
+    });
+
+    test('filters nodes by type and status', async () => {
+        const graph = await addProject('Filter Project', 'Project used to filter nodes', 'waiting_goal');
+        const pendingTask = await addNode(graph.id, 'TASK', 'Pending task', 'Task still pending');
+        const runningTask = await callTool('graph-add-node', {
+            graphId: graph.id,
+            type: 'TASK',
+            title: 'Running task',
+            description: 'Task in progress',
+            status: 'in_progress',
+            links: []
+        });
+        await addNode(graph.id, 'GOAL', 'Pending goal', 'Goal still pending');
+        expect(runningTask.isError).toBeFalsy();
+
+        const result = await callTool('graph-get-nodes', {
+            graphId: graph.id,
+            type: 'TASK',
+            status: 'pending'
+        });
+        expect(result.isError).toBeFalsy();
+
+        const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; }[];
+        expect(nodes).toHaveLength(1);
+        expect(nodes[0]?.id).toEqual(pendingTask.id);
+    });
+
+    test('caps the node list with a limit, keeping the most recent first', async () => {
+        const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const graph = await addProject('Limit Project', 'Project used to limit nodes', 'waiting_goal');
+        await addNode(graph.id, 'TASK', 'First task', 'Oldest node');
+        await sleep(5);
+        const second = await addNode(graph.id, 'TASK', 'Second task', 'Middle node');
+        await sleep(5);
+        const third = await addNode(graph.id, 'TASK', 'Third task', 'Newest node');
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id, limit: 2 });
+        expect(result.isError).toBeFalsy();
+
+        const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; }[];
+        expect(nodes).toHaveLength(2);
+        expect(nodes.map(node => node.id)).toEqual([third.id, second.id]);
+    });
+
+    test('returns an empty list when no node matches the filters', async () => {
+        const graph = await addProject('Empty Filter Project', 'Project with a single node', 'waiting_goal');
+        await addNode(graph.id, 'TASK', 'Only task', 'The only node');
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id, type: 'GOAL' });
+        expect(result.isError).toBeFalsy();
+
+        const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; }[];
+        expect(nodes).toEqual([]);
+    });
+
+    test('refuses a node list with an invalid type filter', async () => {
+        const graph = await addProject('Invalid Filter Project', 'Project used for an invalid filter', 'waiting_goal');
+        await addNode(graph.id, 'TASK', 'Some task', 'Some task description');
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id, type: 'NOT_A_TYPE' });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('Invalid arguments');
+    });
+
+    test('ranks search results by similarity, penalizing reversed and repeated tokens', async () => {
+        const graph = await addProject('Search Project', 'Project used to rank search results', 'waiting_goal');
+        const exact = await addNode(graph.id, 'TASK', 'Carro, porta', 'Neutral description a');
+        const repeated = await addNode(graph.id, 'TASK', 'Carro, Carro, porta', 'Neutral description b');
+        const reversed = await addNode(graph.id, 'TASK', 'Porta, carro', 'Neutral description c');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'carro porta' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([exact.id, repeated.id, reversed.id]);
+        expect(results[0]).toMatchObject({ titleScore: 1, descriptionScore: 0, score: 0.5 });
+        expect(results[1]).toMatchObject({ titleScore: 0.8, descriptionScore: 0, score: 0.4 });
+        expect(results[2]).toMatchObject({ titleScore: 0.5, descriptionScore: 0, score: 0.25 });
+    });
+
+    test('matches the description when the title does not contain the query', async () => {
+        const graph = await addProject('Description Search Project', 'Project used to search descriptions', 'waiting_goal');
+        const matched = await addNode(graph.id, 'FACT', 'Unrelated fact', 'A fact that matches the query in its description');
+        await addNode(graph.id, 'OBSERVATION', 'Other observation', 'Another observation with nothing to match');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'query description' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results).toHaveLength(1);
+        expect(results[0]?.node.id).toEqual(matched.id);
+        expect(results[0]?.titleScore).toEqual(0);
+        expect(results[0]?.descriptionScore).toBeGreaterThan(0);
+    });
+
+    test('ignores diacritics on the query when matching a node', async () => {
+        const graph = await addProject('Accent Search Project', 'Project used to search with accents', 'waiting_goal');
+        const node = await addNode(graph.id, 'TASK', 'Meal benefit', 'Pagamento do vale refeicao mensal');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'refeição' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results).toHaveLength(1);
+        expect(results[0]?.node.id).toEqual(node.id);
+        expect(results[0]?.titleScore).toEqual(0);
+        expect(results[0]?.descriptionScore).toBeGreaterThan(0);
+    });
+
+    test('caps the search results with a limit', async () => {
+        const graph = await addProject('Search Limit Project', 'Project used to limit search results', 'waiting_goal');
+        const exact = await addNode(graph.id, 'TASK', 'Carro, porta', 'Description used for the limit check');
+        const repeated = await addNode(graph.id, 'TASK', 'Carro, Carro, porta', 'Another description used for the limit check');
+        await addNode(graph.id, 'TASK', 'Porta, carro', 'Third description used for the limit check');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'carro porta', limit: 2 });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([exact.id, repeated.id]);
+    });
+
+    test('breaks search ties by the most recently created node', async () => {
+        const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const graph = await addProject('Search Tie Project', 'Project used to break search ties', 'waiting_goal');
+        const first = await addNode(graph.id, 'TASK', 'Tie task', 'Same description for both nodes');
+        await sleep(5);
+        const second = await addNode(graph.id, 'TASK', 'Tie task', 'Same description for both nodes');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'tie task' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([second.id, first.id]);
+    });
+
+    test('refuses search text that is empty after normalization', async () => {
+        const graph = await addProject('Empty Search Project', 'Project used to reject an empty search', 'waiting_goal');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: '##' });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('A non-empty search text is required');
+    });
+
+    test('fails the search when the graph does not exist', async () => {
+        const result = await callTool('graph-search-nodes', { graphId: randomUUID(), text: 'anything' });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('Graph not found');
+    });
+
+    test('keeps node timestamps out of search results', async () => {
+        const graph = await addProject('Stamped Search Project', 'Project used to check exposed fields on search', 'waiting_goal');
+        await addNode(graph.id, 'TASK', 'Stamped search task', 'Search task with stamps');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'search task' });
+        expect(result.isError).toBeFalsy();
+
+        const text = textOf(result);
+        expect(text).not.toContain('createdAt');
+        expect(text).not.toContain('updatedAt');
+        expect(text).not.toContain('created_at');
+        expect(text).not.toContain('updated_at');
     });
 });

@@ -15,6 +15,8 @@ export class GraphAddNodeService implements IGraphAddNodeService {
             };
         }
 
+        const now = new Date();
+
         const node: Node = {
             id: randomUUID(),
             graphId: params.graphId,
@@ -22,7 +24,9 @@ export class GraphAddNodeService implements IGraphAddNodeService {
             status: params.status,
             title: params.title,
             description: params.description,
-            links: params.links
+            links: params.links,
+            createdAt: now,
+            updatedAt: now
         };
 
         return {

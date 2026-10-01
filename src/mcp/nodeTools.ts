@@ -3,7 +3,7 @@ import * as z from 'zod/v4';
 import { EDGE_TYPES } from '@domain/constants/edge-types.ts';
 import { NODE_STATUS } from '@domain/constants/node-status.ts';
 import { NODE_TYPES } from '@domain/constants/node-types.ts';
-import { graphAddNodeController, graphDeleteNodeController, graphGetNodeController, graphGetNodesController, graphUpdateNodeController } from '@src/container.ts';
+import { graphAddNodeController, graphDeleteNodeController, graphGetNodeController, graphGetNodesController, graphSearchNodesController, graphUpdateNodeController } from '@src/container.ts';
 
 const NODE_TYPE_VALUES = Object.values(NODE_TYPES).map(nodeType => nodeType.value);
 const EDGE_TYPE_VALUES = Object.values(EDGE_TYPES).map(edgeType => edgeType.value);
@@ -15,7 +15,7 @@ export function registerNodeTools (server: McpServer): void {
         {
             description: 'Add a new node to an existing graph, optionally linked to other nodes of the same graph',
             inputSchema: z.object({
-                graphId: z.string().uuid().describe('Graph (project) id this node belongs to (uuidv4)'),
+                graphId: z.uuid().describe('Graph (project) id this node belongs to (uuidv4)'),
                 type: z.enum(NODE_TYPE_VALUES).describe('Node type'),
                 title: z.string().min(1).describe('Node title'),
                 description: z.string().min(1).describe('Node description'),
@@ -44,14 +44,17 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-get-nodes',
         {
-            description: 'List all nodes of a graph (project)',
+            description: 'List the nodes of a graph (project), ordered by the most recently updated first, optionally filtered by type and status and capped by a limit',
             inputSchema: z.object({
-                graphId: z.string().uuid().describe('Graph (project) id whose nodes should be listed (uuidv4)')
+                graphId: z.uuid().describe('Graph (project) id whose nodes should be listed (uuidv4)'),
+                type: z.enum(NODE_TYPE_VALUES).optional().describe('Only return nodes of this type (omit for all types)'),
+                status: z.enum(NODE_STATUS_VALUES).optional().describe('Only return nodes with this status (omit for all statuses)'),
+                limit: z.number().int().positive().optional().describe('Maximum number of nodes to return (omit for no limit)')
             })
         },
-        async ({ graphId }) => {
+        async ({ graphId, type, status, limit }) => {
             const controller = await graphGetNodesController();
-            const response = await controller.handle({ graphId });
+            const response = await controller.handle({ graphId, type, status, limit });
 
             const text = response.success
                 ? `Nodes:\n${JSON.stringify(response.nodes ?? [], null, 4)}`
@@ -69,7 +72,7 @@ export function registerNodeTools (server: McpServer): void {
         {
             description: 'Fetch a single node from the agent workflow graph by id (uuidv4)',
             inputSchema: z.object({
-                id: z.string().uuid().describe('Node id (uuidv4)')
+                id: z.uuid().describe('Node id (uuidv4)')
             })
         },
         async ({ id }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {
@@ -88,11 +91,36 @@ export function registerNodeTools (server: McpServer): void {
     );
 
     server.registerTool(
+        'graph-search-nodes',
+        {
+            description: 'Search the nodes of a graph (project) by text across title and description, ranked by similarity. Use short meaningful tokens without articles or connectives from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); connectives match almost everything, so keep the query short or cap results with a limit.',
+            inputSchema: z.object({
+                graphId: z.uuid().describe('Graph (project) id whose nodes should be searched (uuidv4)'),
+                text: z.string().min(1).describe('Text to match across title and description, as short meaningful tokens'),
+                limit: z.number().int().positive().optional().describe('Maximum number of results to return (omit for no limit)')
+            })
+        },
+        async ({ graphId, text, limit }) => {
+            const controller = await graphSearchNodesController();
+            const response = await controller.handle({ graphId, text, limit });
+
+            const output = response.success
+                ? `Results:\n${JSON.stringify(response.results ?? [], null, 4)}`
+                : `Failed to search nodes: ${response.error ?? 'Unknown error'}`;
+
+            return {
+                content: [{ type: 'text' as const, text: output }],
+                isError: !response.success
+            };
+        }
+    );
+
+    server.registerTool(
         'graph-update-node',
         {
             description: 'Update an existing node by id (uuidv4). Provide only the fields to change; omitted fields keep their current value. Pass links to replace the whole link list (an empty list clears all links). Node type cannot be changed.',
             inputSchema: z.object({
-                id: z.string().uuid().describe('Node id to update (uuidv4)'),
+                id: z.uuid().describe('Node id to update (uuidv4)'),
                 title: z.string().min(1).optional().describe('New node title (omit to keep current)'),
                 description: z.string().min(1).optional().describe('New node description (omit to keep current)'),
                 status: z.enum(NODE_STATUS_VALUES).optional().describe('New node status (omit to keep current)'),

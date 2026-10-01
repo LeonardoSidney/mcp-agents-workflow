@@ -14,6 +14,7 @@ export class GraphUpdateNodeService implements IGraphUpdateNodeService {
         }
 
         const { node } = params;
+        const now = new Date();
         const title = params.title ?? node.title;
         const description = params.description ?? node.description;
         const status = params.status ?? node.status;
@@ -26,7 +27,9 @@ export class GraphUpdateNodeService implements IGraphUpdateNodeService {
             status,
             title,
             description,
-            links
+            links,
+            createdAt: node.createdAt,
+            updatedAt: now
         };
 
         return {

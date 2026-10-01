@@ -6,8 +6,6 @@ import type { Node, NodeLink } from '@domain/entities/node.ts';
 
 export class NodeDTO {
     static to_mongodb (node: Node): NodeDocument {
-        const now = new Date();
-
         return {
             id: node.id,
             graph_id: node.graphId,
@@ -16,8 +14,8 @@ export class NodeDTO {
             title: node.title,
             description: node.description,
             links: node.links,
-            created_at: now,
-            updated_at: now
+            created_at: node.createdAt,
+            updated_at: node.updatedAt
         };
     }
 
@@ -45,7 +43,9 @@ export class NodeDTO {
             status: document.status,
             title: document.title,
             description: document.description,
-            links
+            links,
+            createdAt: document.created_at,
+            updatedAt: document.updated_at
         };
     }
 }

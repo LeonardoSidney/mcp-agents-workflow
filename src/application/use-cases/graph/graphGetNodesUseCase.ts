@@ -36,7 +36,12 @@ export class GraphGetNodesUseCase implements IGraphGetNodesUseCase {
             };
         }
 
-        const nodes = await this.nodeRepository.getNodes({ graphId: params.graphId });
+        const nodes = await this.nodeRepository.getNodes({
+            graphId: params.graphId,
+            type: params.type,
+            status: params.status,
+            limit: params.limit
+        });
 
         return {
             success: true,

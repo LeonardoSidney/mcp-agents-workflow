@@ -1,5 +1,5 @@
 import type { NodeStatus } from '@domain/constants/node-status.ts';
-import type { Node, NodeLink } from '@domain/entities/node.ts';
+import type { NodeLink, NodeSummary } from '@domain/entities/node.ts';
 
 export interface IGraphUpdateNodeController {
     handle (params: GraphUpdateNodeControllerParams): Promise<GraphUpdateNodeControllerResponse>;
@@ -15,6 +15,6 @@ export type GraphUpdateNodeControllerParams = {
 
 export type GraphUpdateNodeControllerResponse = {
     success: boolean;
-    node?: Node;
+    node?: NodeSummary;
     error?: string;
 };

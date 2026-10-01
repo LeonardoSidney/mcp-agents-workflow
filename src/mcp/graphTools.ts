@@ -62,7 +62,7 @@ export function registerGraphTools (server: McpServer): void {
         {
             description: 'Fetch a single project from the agent workflow graph by id (uuidv4)',
             inputSchema: z.object({
-                id: z.string().uuid().describe('Project id (uuidv4)')
+                id: z.uuid().describe('Project id (uuidv4)')
             })
         },
         async ({ id }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {

@@ -1,4 +1,5 @@
 import type { GraphGetNodeControllerParams, GraphGetNodeControllerResponse, IGraphGetNodeController } from '@domain/controllers/iGraphGetNodeController.ts';
+import { toNodeSummary } from '@domain/entities/node.ts';
 import type { ILogger } from '@domain/logger.ts';
 import type { IGraphGetNodeUseCase } from '@domain/use-cases/iGraphGetNodeUseCase.ts';
 
@@ -21,9 +22,11 @@ export class GraphGetNodeController implements IGraphGetNodeController {
 
         const response = await this.useCase.execute({ id });
 
+        const node = response.node ? toNodeSummary(response.node) : undefined;
+
         return {
             success: response.success,
-            node: response.node,
+            node,
             error: response.error
         };
     }

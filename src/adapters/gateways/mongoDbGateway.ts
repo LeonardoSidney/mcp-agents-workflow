@@ -1,4 +1,4 @@
-import type { Db } from 'mongodb';
+import type { Db, Filter } from 'mongodb';
 import type {
     AddGraphGatewayParams,
     AddNodeGatewayParams,
@@ -58,7 +58,6 @@ export class MongoDBGateway implements IDatabaseGateway {
     async updateNode (params: UpdateNodeGatewayParams): Promise<boolean> {
         const collection = this.database.collection<NodeDocument>('nodes');
         const { node } = params;
-        const now = new Date();
 
         const result = await collection.updateOne(
             { id: node.id },
@@ -68,7 +67,7 @@ export class MongoDBGateway implements IDatabaseGateway {
                     title: node.title,
                     description: node.description,
                     links: node.links,
-                    updated_at: now
+                    updated_at: node.updated_at
                 }
             }
         );
@@ -84,11 +83,22 @@ export class MongoDBGateway implements IDatabaseGateway {
 
     async listNodes (params: ListNodesGatewayParams): Promise<NodeDocument[]> {
         const collection = this.database.collection<NodeDocument>('nodes');
+        const filter: Filter<NodeDocument> = { graph_id: params.graphId };
 
-        return collection
-            .find({ graph_id: params.graphId })
-            .sort({ updated_at: -1 })
-            .toArray();
+        if (params.type) {
+            filter.type = params.type;
+        }
+
+        if (params.status) {
+            filter.status = params.status;
+        }
+
+        const cursor = collection.find(filter).sort({ updated_at: -1 });
+        if (params.limit) {
+            return cursor.limit(params.limit).toArray();
+        }
+
+        return cursor.toArray();
     }
 
     async deleteNode (params: DeleteNodeGatewayParams): Promise<boolean> {

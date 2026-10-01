@@ -28,7 +28,12 @@ export class NodeRepository implements INodeRepository {
     }
 
     async getNodes (params: GetNodesRepositoryParams): Promise<Node[]> {
-        const documents = await this.databaseGateway.listNodes({ graphId: params.graphId });
+        const documents = await this.databaseGateway.listNodes({
+            graphId: params.graphId,
+            type: params.type,
+            status: params.status,
+            limit: params.limit
+        });
 
         return documents.map(document => NodeDTO.to_domain(document));
     }

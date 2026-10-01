@@ -1,4 +1,5 @@
 import type { GraphAddNodeControllerParams, GraphAddNodeControllerResponse, IGraphAddNodeController } from '@domain/controllers/iGraphAddNodeController.ts';
+import { toNodeSummary } from '@domain/entities/node.ts';
 import type { ILogger } from '@domain/logger.ts';
 import type { IGraphAddNodeUseCase } from '@domain/use-cases/iGraphAddNodeUseCase.ts';
 
@@ -21,9 +22,11 @@ export class GraphAddNodeController implements IGraphAddNodeController {
 
         const response = await this.useCase.execute({ graphId, type, title, description, status, links });
 
+        const node = response.node ? toNodeSummary(response.node) : undefined;
+
         return {
             success: response.success,
-            node: response.node,
+            node,
             error: response.error
         };
     }

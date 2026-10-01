@@ -6,12 +6,14 @@ import { GraphGetNodeController } from '@adapters/controllers/graph/graphGetNode
 import { GraphGetNodesController } from '@adapters/controllers/graph/graphGetNodesController.ts';
 import { GraphGetProjectController } from '@adapters/controllers/graph/graphGetProjectController.ts';
 import { GraphGetProjectsController } from '@adapters/controllers/graph/graphGetProjectsController.ts';
+import { GraphSearchNodesController } from '@adapters/controllers/graph/graphSearchNodesController.ts';
 import { GraphUpdateNodeController } from '@adapters/controllers/graph/graphUpdateNodeController.ts';
 import { ConsoleLogger } from '@adapters/logger/consoleLogger.ts';
 import { NodeRepository } from '@application/repository/nodeRepository.ts';
 import { ProjectRepository } from '@application/repository/projectRepository.ts';
 import { GraphAddNodeService } from '@application/services/graph/graphAddNodeService.ts';
 import { GraphAddService } from '@application/services/graph/graphAddService.ts';
+import { GraphSearchNodesService } from '@application/services/graph/graphSearchNodesService.ts';
 import { GraphUpdateNodeService } from '@application/services/graph/graphUpdateNodeService.ts';
 import { GraphAddNodeUseCase } from '@application/use-cases/graph/graphAddNodeUseCase.ts';
 import { GraphAddUseCase } from '@application/use-cases/graph/graphAddUseCase.ts';
@@ -21,6 +23,7 @@ import { GraphGetNodeUseCase } from '@application/use-cases/graph/graphGetNodeUs
 import { GraphGetNodesUseCase } from '@application/use-cases/graph/graphGetNodesUseCase.ts';
 import { GraphGetProjectUseCase } from '@application/use-cases/graph/graphGetProjectUseCase.ts';
 import { GraphGetProjectsUseCase } from '@application/use-cases/graph/graphGetProjectsUseCase.ts';
+import { GraphSearchNodesUseCase } from '@application/use-cases/graph/graphSearchNodesUseCase.ts';
 import { GraphUpdateNodeUseCase } from '@application/use-cases/graph/graphUpdateNodeUseCase.ts';
 import type { IDatabaseGateway } from '@domain/gateways/iDatabaseGateway.ts';
 import { bootDatabase } from './boot.ts';
@@ -103,4 +106,13 @@ export async function graphDeleteNodeController (): Promise<GraphDeleteNodeContr
     const nodeRepository = new NodeRepository(databaseGateway);
     const graphDeleteNodeUseCase = new GraphDeleteNodeUseCase(logger, nodeRepository);
     return new GraphDeleteNodeController(logger, graphDeleteNodeUseCase);
+}
+
+export async function graphSearchNodesController (): Promise<GraphSearchNodesController> {
+    const databaseGateway = await database();
+    const projectRepository = new ProjectRepository(databaseGateway);
+    const nodeRepository = new NodeRepository(databaseGateway);
+    const graphSearchNodesService = new GraphSearchNodesService();
+    const graphSearchNodesUseCase = new GraphSearchNodesUseCase(logger, graphSearchNodesService, projectRepository, nodeRepository);
+    return new GraphSearchNodesController(logger, graphSearchNodesUseCase);
 }

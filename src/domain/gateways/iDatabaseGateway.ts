@@ -1,3 +1,6 @@
+import type { NodeStatus } from '@domain/constants/node-status.ts';
+import type { NodeType } from '@domain/constants/node-types.ts';
+
 export interface IDatabaseGateway {
     addGraph (params: AddGraphGatewayParams): Promise<void>;
     listGraphs (): Promise<ProjectDocument[]>;
@@ -37,6 +40,9 @@ export type ListNodeGatewayParams = {
 
 export type ListNodesGatewayParams = {
     graphId: string;
+    type?: NodeType;
+    status?: NodeStatus;
+    limit?: number;
 };
 
 export type DeleteNodeGatewayParams = {

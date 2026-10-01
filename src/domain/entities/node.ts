@@ -15,4 +15,20 @@ export type Node = {
     title: string;
     description: string;
     links: NodeLink[];
+    createdAt: Date;
+    updatedAt: Date;
 };
+
+export type NodeSummary = Pick<Node, 'id' | 'graphId' | 'type' | 'status' | 'title' | 'description' | 'links'>;
+
+export function toNodeSummary (node: Node): NodeSummary {
+    return {
+        id: node.id,
+        graphId: node.graphId,
+        type: node.type,
+        status: node.status,
+        title: node.title,
+        description: node.description,
+        links: node.links
+    };
+}
