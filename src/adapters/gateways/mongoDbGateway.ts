@@ -1,88 +1,115 @@
-import type { Db, Filter } from 'mongodb';
+import type { Filter, MongoClient } from 'mongodb';
 import type {
     AddGraphGatewayParams,
-    AddNodeGatewayParams,
+    AddNodeWithEdgesGatewayParams,
     DeleteGraphGatewayParams,
     DeleteNodeGatewayParams,
     IDatabaseGateway,
     ListNodeGatewayParams,
     ListNodesGatewayParams,
     ListGraphGatewayParams,
+    ListEdgesBySourceGatewayParams,
+    ListEdgesByTargetGatewayParams,
     NodeDocument,
+    EdgeDocument,
     ProjectDocument,
-    RemoveNodeLinksGatewayParams,
-    UpdateNodeGatewayParams
+    UpdateNodeWithEdgesGatewayParams
 } from '@domain/gateways/iDatabaseGateway.ts';
 
 export class MongoDBGateway implements IDatabaseGateway {
-    private readonly database: Db;
+    private readonly client: MongoClient;
 
     constructor (
-        database: Db
+        client: MongoClient
     ) {
-        this.database = database;
+        this.client = client;
     }
 
     async addGraph (params: AddGraphGatewayParams): Promise<void> {
-        const collection = this.database.collection<ProjectDocument>('projects');
+        const collection = this.client.db().collection<ProjectDocument>('projects');
 
         await collection.insertOne(params.project);
     }
 
     async listGraphs (): Promise<ProjectDocument[]> {
-        const collection = this.database.collection<ProjectDocument>('projects');
+        const collection = this.client.db().collection<ProjectDocument>('projects');
 
         return collection.find({}).toArray();
     }
 
     async listGraph (params: ListGraphGatewayParams): Promise<ProjectDocument | null> {
-        const collection = this.database.collection<ProjectDocument>('projects');
+        const collection = this.client.db().collection<ProjectDocument>('projects');
 
         return collection.findOne({ id: params.id });
     }
 
     async deleteGraph (params: DeleteGraphGatewayParams): Promise<boolean> {
-        const collection = this.database.collection<ProjectDocument>('projects');
+        const collection = this.client.db().collection<ProjectDocument>('projects');
 
         const result = await collection.deleteOne({ id: params.id });
 
         return result.deletedCount > 0;
     }
 
-    async addNode (params: AddNodeGatewayParams): Promise<void> {
-        const collection = this.database.collection<NodeDocument>('nodes');
+    async addNodeWithEdges (params: AddNodeWithEdgesGatewayParams): Promise<void> {
+        const { node, edges } = params;
 
-        await collection.insertOne(params.node);
+        await this.client.withSession(session => session.withTransaction(async () => {
+            const nodes = this.client.db().collection<NodeDocument>('nodes');
+            const edgeCollection = this.client.db().collection<EdgeDocument>('edges');
+
+            await nodes.insertOne(node, { session });
+
+            if (edges.length > 0) {
+                await edgeCollection.insertMany(edges, { session });
+            }
+        }));
     }
 
-    async updateNode (params: UpdateNodeGatewayParams): Promise<boolean> {
-        const collection = this.database.collection<NodeDocument>('nodes');
-        const { node } = params;
+    async updateNodeWithEdges (params: UpdateNodeWithEdgesGatewayParams): Promise<boolean> {
+        const { node, edges } = params;
+        const nodeCollection = this.client.db().collection<NodeDocument>('nodes');
 
-        const result = await collection.updateOne(
-            { id: node.id },
-            {
-                $set: {
-                    status: node.status,
-                    title: node.title,
-                    description: node.description,
-                    links: node.links,
-                    updated_at: node.updated_at
-                }
+        const update = {
+            $set: {
+                status: node.status,
+                title: node.title,
+                description: node.description,
+                updated_at: node.updated_at
             }
-        );
+        };
 
-        return result.matchedCount > 0;
+        if (edges === undefined) {
+            const result = await nodeCollection.updateOne({ id: node.id }, update);
+
+            return result.matchedCount > 0;
+        }
+
+        const edgeCollection = this.client.db().collection<EdgeDocument>('edges');
+
+        return this.client.withSession(session => session.withTransaction(async (): Promise<boolean> => {
+            const result = await nodeCollection.updateOne({ id: node.id }, update, { session });
+            if (result.matchedCount === 0) {
+                return false;
+            }
+
+            await edgeCollection.deleteMany({ graph_id: node.graph_id, source_id: node.id }, { session });
+            if (edges.length > 0) {
+                await edgeCollection.insertMany(edges, { session });
+            }
+
+            return true;
+        }));
     }
 
     async listNode (params: ListNodeGatewayParams): Promise<NodeDocument | null> {
-        const collection = this.database.collection<NodeDocument>('nodes');
+        const collection = this.client.db().collection<NodeDocument>('nodes');
 
         return collection.findOne({ id: params.id });
     }
 
     async listNodes (params: ListNodesGatewayParams): Promise<NodeDocument[]> {
-        const collection = this.database.collection<NodeDocument>('nodes');
+        const collection = this.client.db().collection<NodeDocument>('nodes');
         const filter: Filter<NodeDocument> = { graph_id: params.graphId };
 
         if (params.type) {
@@ -101,24 +128,35 @@ export class MongoDBGateway implements IDatabaseGateway {
         return cursor.toArray();
     }
 
-    async deleteNode (params: DeleteNodeGatewayParams): Promise<boolean> {
-        const collection = this.database.collection<NodeDocument>('nodes');
+    async deleteNodeWithEdges (params: DeleteNodeGatewayParams): Promise<boolean> {
+        return this.client.withSession(session => session.withTransaction(async (): Promise<boolean> => {
+            const nodes = this.client.db().collection<NodeDocument>('nodes');
+            const edgeCollection = this.client.db().collection<EdgeDocument>('edges');
 
-        const result = await collection.deleteOne({ id: params.id });
+            const result = await nodes.deleteOne({ id: params.id }, { session });
+            if (result.deletedCount === 0) {
+                return false;
+            }
 
-        return result.deletedCount > 0;
+            await edgeCollection.deleteMany({ source_id: params.id }, { session });
+
+            return true;
+        }));
     }
 
-    async removeNodeLinks (params: RemoveNodeLinksGatewayParams): Promise<void> {
-        const collection = this.database.collection<NodeDocument>('nodes');
-        const now = new Date();
+    async listEdgesBySource (params: ListEdgesBySourceGatewayParams): Promise<EdgeDocument[]> {
+        const collection = this.client.db().collection<EdgeDocument>('edges');
 
-        await collection.updateMany(
-            { graph_id: params.graphId, links: { $elemMatch: { targetId: params.targetId } } },
-            {
-                $pull: { links: { targetId: params.targetId } },
-                $set: { updated_at: now }
-            }
-        );
+        return collection
+            .find({ graph_id: params.graphId, source_id: params.sourceId })
+            .toArray();
+    }
+
+    async listEdgesByTarget (params: ListEdgesByTargetGatewayParams): Promise<EdgeDocument[]> {
+        const collection = this.client.db().collection<EdgeDocument>('edges');
+
+        return collection
+            .find({ graph_id: params.graphId, target_id: params.targetId })
+            .toArray();
     }
 }

@@ -1,19 +1,21 @@
 import { Client, InMemoryTransport, type CallToolResult } from '@modelcontextprotocol/client';
 import { MongoClient, type Collection } from 'mongodb';
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { Node, NodeLink } from '@domain/entities/node.ts';
+import type { NodeWithEdges } from '@domain/entities/node.ts';
+import type { EdgeReference } from '@domain/entities/edge.ts';
 import type { Project } from '@domain/entities/project.ts';
-import type { NodeDocument, ProjectDocument } from '@domain/gateways/iDatabaseGateway.ts';
+import type { EdgeDocument, NodeDocument, ProjectDocument } from '@domain/gateways/iDatabaseGateway.ts';
 import { shutdownDatabase } from '@src/boot.ts';
 import { createServer } from '@src/mcpServer.ts';
 
-const MONGODB_URI = 'mongodb://127.0.0.1:27017/mcp-agents-workflow-test';
+const MONGODB_URI = 'mongodb://127.0.0.1:27017/mcp-agents-workflow-test?directConnection=true';
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function mcpTestHarness () {
     const mongoClient = new MongoClient(MONGODB_URI);
     const projectsCollection: Collection<ProjectDocument> = mongoClient.db().collection('projects');
     const nodesCollection: Collection<NodeDocument> = mongoClient.db().collection('nodes');
+    const edgesCollection: Collection<EdgeDocument> = mongoClient.db().collection('edges');
 
     let server: McpServer | undefined;
     let client: Client | undefined;
@@ -25,6 +27,7 @@ export function mcpTestHarness () {
 
     afterAll(async () => {
         await nodesCollection.deleteMany({});
+        await edgesCollection.deleteMany({});
         await projectsCollection.deleteMany({});
         await shutdownDatabase();
         await mongoClient.close();
@@ -32,6 +35,7 @@ export function mcpTestHarness () {
 
     beforeEach(async () => {
         await nodesCollection.deleteMany({});
+        await edgesCollection.deleteMany({});
         await projectsCollection.deleteMany({});
 
         const [serverTransport, clientTransport] = InMemoryTransport.createLinkedPair();
@@ -90,15 +94,15 @@ export function mcpTestHarness () {
         type: string,
         title: string,
         description: string,
-        links: NodeLink[] = []
-    ): Promise<Node> {
+        edges: EdgeReference[] = []
+    ): Promise<NodeWithEdges> {
         const result = await callTool('graph-add-node', {
             graphId,
             type,
             title,
             description,
             status: 'pending',
-            links
+            edges
         });
 
         if (result.isError) {
@@ -107,7 +111,7 @@ export function mcpTestHarness () {
         }
 
         const jsonStart = textOf(result).indexOf('{');
-        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as Node;
+        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as NodeWithEdges;
         if (!parsed.id.match(UUID_V4_REGEX)) {
             throw new Error(`graph-add-node did not return a uuidv4 id: ${parsed.id}`);
         }
@@ -131,6 +135,7 @@ export function mcpTestHarness () {
         fetchProject,
         fetchNode,
         projectsCollection,
-        nodesCollection
+        nodesCollection,
+        edgesCollection
     };
 }

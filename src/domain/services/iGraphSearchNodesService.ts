@@ -1,11 +1,11 @@
-import type { Node } from '@domain/entities/node.ts';
+import type { NodeWithEdges } from '@domain/entities/node.ts';
 
 export interface IGraphSearchNodesService {
     scoreNodes (params: GraphSearchNodesServiceParams): GraphSearchNodesServiceResponse;
 }
 
 export type NodeSearchResult = {
-    node: Node;
+    node: NodeWithEdges;
     titleScore: number;
     descriptionScore: number;
     score: number;
@@ -13,7 +13,7 @@ export type NodeSearchResult = {
 
 export type GraphSearchNodesServiceParams = {
     text: string;
-    nodes: Node[];
+    nodes: NodeWithEdges[];
 };
 
 export type GraphSearchNodesServiceResponse = {

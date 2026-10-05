@@ -1,7 +1,10 @@
-import type { INodeRepository, AddNodeRepositoryParams, DeleteNodeRepositoryParams, GetNodeRepositoryParams, GetNodesRepositoryParams, RemoveNodeLinksRepositoryParams, UpdateNodeRepositoryParams } from '@domain/repository/iNodeRepository.ts';
-import type { Node } from '@domain/entities/node.ts';
+import type { INodeRepository, AddNodeRepositoryParams, DeleteNodeRepositoryParams, GetNodeRepositoryParams, GetNodesRepositoryParams, ListReferencingNodeIdsRepositoryParams, UpdateNodeRepositoryParams } from '@domain/repository/iNodeRepository.ts';
+import type { NodeWithEdges } from '@domain/entities/node.ts';
+import type { EdgeReference } from '@domain/entities/edge.ts';
+import { toEdgeReference } from '@domain/entities/edge.ts';
 import type { IDatabaseGateway } from '@domain/gateways/iDatabaseGateway.ts';
 import { NodeDTO } from '@application/dto/nodeDto.ts';
+import { EdgeDTO } from '@application/dto/edgeDto.ts';
 
 export class NodeRepository implements INodeRepository {
     private readonly databaseGateway: IDatabaseGateway;
@@ -13,21 +16,25 @@ export class NodeRepository implements INodeRepository {
     }
 
     async addNode (params: AddNodeRepositoryParams): Promise<void> {
-        const document = NodeDTO.to_mongodb(params.node);
+        const nodeDocument = NodeDTO.to_mongodb(params.node);
+        const edgeDocuments = params.edges.map(EdgeDTO.to_mongodb);
 
-        await this.databaseGateway.addNode({ node: document });
+        await this.databaseGateway.addNodeWithEdges({ node: nodeDocument, edges: edgeDocuments });
     }
 
-    async getNode (params: GetNodeRepositoryParams): Promise<Node | null> {
+    async getNode (params: GetNodeRepositoryParams): Promise<NodeWithEdges | null> {
         const document = await this.databaseGateway.listNode({ id: params.id });
         if (!document) {
             return null;
         }
 
-        return NodeDTO.to_domain(document);
+        const node = NodeDTO.to_domain(document);
+        const edges = await this.edgesBySource(node.graphId, node.id);
+
+        return { ...node, edges };
     }
 
-    async getNodes (params: GetNodesRepositoryParams): Promise<Node[]> {
+    async getNodes (params: GetNodesRepositoryParams): Promise<NodeWithEdges[]> {
         const documents = await this.databaseGateway.listNodes({
             graphId: params.graphId,
             type: params.type,
@@ -35,20 +42,34 @@ export class NodeRepository implements INodeRepository {
             limit: params.limit
         });
 
-        return documents.map(document => NodeDTO.to_domain(document));
+        return Promise.all(documents.map(async document => {
+            const node = NodeDTO.to_domain(document);
+            const edges = await this.edgesBySource(node.graphId, node.id);
+
+            return { ...node, edges };
+        }));
     }
 
     async updateNode (params: UpdateNodeRepositoryParams): Promise<boolean> {
-        const document = NodeDTO.to_mongodb(params.node);
+        const nodeDocument = NodeDTO.to_mongodb(params.node);
+        const edgeDocuments = params.edges ? params.edges.map(EdgeDTO.to_mongodb) : undefined;
 
-        return this.databaseGateway.updateNode({ node: document });
+        return this.databaseGateway.updateNodeWithEdges({ node: nodeDocument, edges: edgeDocuments });
     }
 
     async deleteNode (params: DeleteNodeRepositoryParams): Promise<boolean> {
-        return this.databaseGateway.deleteNode({ id: params.id });
+        return this.databaseGateway.deleteNodeWithEdges({ id: params.id });
     }
 
-    async removeNodeLinks (params: RemoveNodeLinksRepositoryParams): Promise<void> {
-        await this.databaseGateway.removeNodeLinks({ graphId: params.graphId, targetId: params.targetId });
+    async listReferencingNodeIds (params: ListReferencingNodeIdsRepositoryParams): Promise<string[]> {
+        const documents = await this.databaseGateway.listEdgesByTarget({ graphId: params.graphId, targetId: params.targetId });
+
+        return documents.map(document => document.source_id);
+    }
+
+    private async edgesBySource (graphId: string, sourceId: string): Promise<EdgeReference[]> {
+        const documents = await this.databaseGateway.listEdgesBySource({ graphId, sourceId });
+
+        return documents.map(document => toEdgeReference(EdgeDTO.to_domain(document)));
     }
 }

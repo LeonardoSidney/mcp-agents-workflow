@@ -1,5 +1,6 @@
 import type { NodeStatus } from '@domain/constants/node-status.ts';
-import type { NodeLink, NodeSummary } from '@domain/entities/node.ts';
+import type { EdgeReference } from '@domain/entities/edge.ts';
+import type { NodeSummary } from '@domain/entities/node.ts';
 
 export interface IGraphUpdateNodeController {
     handle (params: GraphUpdateNodeControllerParams): Promise<GraphUpdateNodeControllerResponse>;
@@ -10,7 +11,7 @@ export type GraphUpdateNodeControllerParams = {
     title?: string;
     description?: string;
     status?: NodeStatus;
-    links?: NodeLink[];
+    edges?: EdgeReference[];
 };
 
 export type GraphUpdateNodeControllerResponse = {

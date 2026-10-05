@@ -1,8 +1,7 @@
-import { isEdgeType } from '@domain/guards/edge-type.ts';
 import { isNodeStatus } from '@domain/guards/node-status.ts';
 import { isNodeType } from '@domain/guards/node-type.ts';
 import type { NodeDocument } from '@domain/gateways/iDatabaseGateway.ts';
-import type { Node, NodeLink } from '@domain/entities/node.ts';
+import type { Node } from '@domain/entities/node.ts';
 
 export class NodeDTO {
     static to_mongodb (node: Node): NodeDocument {
@@ -13,7 +12,6 @@ export class NodeDTO {
             status: node.status,
             title: node.title,
             description: node.description,
-            links: node.links,
             created_at: node.createdAt,
             updated_at: node.updatedAt
         };
@@ -28,14 +26,6 @@ export class NodeDTO {
             throw new Error(`Unknown node status stored in database: ${document.status}`);
         }
 
-        const links: NodeLink[] = document.links.map(link => {
-            if (!isEdgeType(link.type)) {
-                throw new Error(`Unknown edge type stored in database: ${link.type}`);
-            }
-
-            return { type: link.type, targetId: link.targetId };
-        });
-
         return {
             id: document.id,
             graphId: document.graph_id,
@@ -43,7 +33,6 @@ export class NodeDTO {
             status: document.status,
             title: document.title,
             description: document.description,
-            links,
             createdAt: document.created_at,
             updatedAt: document.updated_at
         };

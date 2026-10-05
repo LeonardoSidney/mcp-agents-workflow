@@ -1,5 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { isEdgeType } from '@domain/guards/edge-type.ts';
 import { isNodeStatus } from '@domain/guards/node-status.ts';
+import type { Edge } from '@domain/entities/edge.ts';
 import type { Node } from '@domain/entities/node.ts';
 import type { GraphUpdateNodeServiceParams, GraphUpdateNodeServiceResponse, IGraphUpdateNodeService } from '@domain/services/iGraphUpdateNodeService.ts';
 
@@ -18,7 +20,6 @@ export class GraphUpdateNodeService implements IGraphUpdateNodeService {
         const title = params.title ?? node.title;
         const description = params.description ?? node.description;
         const status = params.status ?? node.status;
-        const links = params.links ?? node.links;
 
         const updated: Node = {
             id: node.id,
@@ -27,14 +28,26 @@ export class GraphUpdateNodeService implements IGraphUpdateNodeService {
             status,
             title,
             description,
-            links,
             createdAt: node.createdAt,
             updatedAt: now
         };
 
+        let edges: Edge[] | undefined;
+        if (params.edges !== undefined) {
+            edges = params.edges.map(edge => ({
+                id: randomUUID(),
+                graphId: node.graphId,
+                sourceId: node.id,
+                targetId: edge.targetId,
+                type: edge.type,
+                description: edge.description
+            }));
+        }
+
         return {
             success: true,
-            node: updated
+            node: updated,
+            edges
         };
     }
 
@@ -43,9 +56,9 @@ export class GraphUpdateNodeService implements IGraphUpdateNodeService {
             return 'Invalid node status';
         }
 
-        for (const link of params.links ?? []) {
-            if (!isEdgeType(link.type)) {
-                return 'Invalid link edge type';
+        for (const edge of params.edges ?? []) {
+            if (!isEdgeType(edge.type)) {
+                return 'Invalid edge type';
             }
         }
 

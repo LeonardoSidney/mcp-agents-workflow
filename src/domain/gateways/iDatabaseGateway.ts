@@ -6,12 +6,13 @@ export interface IDatabaseGateway {
     listGraphs (): Promise<ProjectDocument[]>;
     listGraph (params: ListGraphGatewayParams): Promise<ProjectDocument | null>;
     deleteGraph (params: DeleteGraphGatewayParams): Promise<boolean>;
-    addNode (params: AddNodeGatewayParams): Promise<void>;
-    updateNode (params: UpdateNodeGatewayParams): Promise<boolean>;
+    addNodeWithEdges (params: AddNodeWithEdgesGatewayParams): Promise<void>;
+    updateNodeWithEdges (params: UpdateNodeWithEdgesGatewayParams): Promise<boolean>;
     listNode (params: ListNodeGatewayParams): Promise<NodeDocument | null>;
     listNodes (params: ListNodesGatewayParams): Promise<NodeDocument[]>;
-    deleteNode (params: DeleteNodeGatewayParams): Promise<boolean>;
-    removeNodeLinks (params: RemoveNodeLinksGatewayParams): Promise<void>;
+    deleteNodeWithEdges (params: DeleteNodeGatewayParams): Promise<boolean>;
+    listEdgesBySource (params: ListEdgesBySourceGatewayParams): Promise<EdgeDocument[]>;
+    listEdgesByTarget (params: ListEdgesByTargetGatewayParams): Promise<EdgeDocument[]>;
 }
 
 export type AddGraphGatewayParams = {
@@ -26,12 +27,14 @@ export type DeleteGraphGatewayParams = {
     id: string;
 };
 
-export type AddNodeGatewayParams = {
+export type AddNodeWithEdgesGatewayParams = {
     node: NodeDocument;
+    edges: EdgeDocument[];
 };
 
-export type UpdateNodeGatewayParams = {
+export type UpdateNodeWithEdgesGatewayParams = {
     node: NodeDocument;
+    edges?: EdgeDocument[];
 };
 
 export type ListNodeGatewayParams = {
@@ -49,11 +52,6 @@ export type DeleteNodeGatewayParams = {
     id: string;
 };
 
-export type RemoveNodeLinksGatewayParams = {
-    graphId: string;
-    targetId: string;
-};
-
 export type ProjectDocument = {
     id: string;
     name: string;
@@ -63,11 +61,6 @@ export type ProjectDocument = {
     updated_at: Date;
 };
 
-export type NodeDocumentLink = {
-    type: string;
-    targetId: string;
-};
-
 export type NodeDocument = {
     id: string;
     graph_id: string;
@@ -75,7 +68,27 @@ export type NodeDocument = {
     status: string;
     title: string;
     description: string;
-    links: NodeDocumentLink[];
     created_at: Date;
     updated_at: Date;
 };
+
+export type EdgeDocument = {
+    id: string;
+    graph_id: string;
+    source_id: string;
+    target_id: string;
+    type: string;
+    description?: string;
+};
+
+export type ListEdgesBySourceGatewayParams = {
+    graphId: string;
+    sourceId: string;
+};
+
+export type ListEdgesByTargetGatewayParams = {
+    graphId: string;
+    targetId: string;
+};
+
+

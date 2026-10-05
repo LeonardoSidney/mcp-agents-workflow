@@ -1,11 +1,6 @@
-import type { EdgeType } from '@domain/constants/edge-types.ts';
 import type { NodeStatus } from '@domain/constants/node-status.ts';
 import type { NodeType } from '@domain/constants/node-types.ts';
-
-export type NodeLink = {
-    type: EdgeType;
-    targetId: string;
-};
+import type { EdgeReference } from '@domain/entities/edge.ts';
 
 export type Node = {
     id: string;
@@ -14,14 +9,19 @@ export type Node = {
     status: NodeStatus;
     title: string;
     description: string;
-    links: NodeLink[];
     createdAt: Date;
     updatedAt: Date;
 };
 
-export type NodeSummary = Pick<Node, 'id' | 'graphId' | 'type' | 'status' | 'title' | 'description' | 'links'>;
+export type NodeWithEdges = Node & {
+    edges: EdgeReference[];
+};
 
-export function toNodeSummary (node: Node): NodeSummary {
+export type NodeSummary = Pick<Node, 'id' | 'graphId' | 'type' | 'status' | 'title' | 'description'> & {
+    edges: EdgeReference[];
+};
+
+export function toNodeSummary (node: NodeWithEdges): NodeSummary {
     return {
         id: node.id,
         graphId: node.graphId,
@@ -29,6 +29,6 @@ export function toNodeSummary (node: Node): NodeSummary {
         status: node.status,
         title: node.title,
         description: node.description,
-        links: node.links
+        edges: node.edges
     };
 }

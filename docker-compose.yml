@@ -20,14 +20,21 @@ services:
   mongo:
     image: mongo:8
     container_name: mcp-agents-workflow-mongo
-    command: ["mongod", "--logpath", "/dev/null"]
     environment:
       MONGO_INITDB_DATABASE: mcp-agents-workflow
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        mongod --replSet rs0 --bind_ip_all --logpath /dev/null &
+        until mongosh --quiet --norc --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1; do sleep 1; done
+        mongosh --quiet --norc --eval 'try { if (rs.status().myState !== 1) throw new Error("not primary"); } catch (e) { try { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "mongo:27017" }] }) } catch (e2) {} }' >/dev/null 2>&1 || true
+        wait -n
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand(\"ping\")' >/dev/null 2>&1 || exit 1"]
-      interval: 10s
+      test: ["CMD-SHELL", "mongosh --quiet --norc --eval 'rs.status().myState' 2>/dev/null | grep -qE '^(1|2)$' || exit 1"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
     volumes:
       - mongo-data:/data/db
     ports:

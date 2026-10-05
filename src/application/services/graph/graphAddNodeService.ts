@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { isEdgeType } from '@domain/guards/edge-type.ts';
 import { isNodeStatus } from '@domain/guards/node-status.ts';
 import { isNodeType } from '@domain/guards/node-type.ts';
+import type { Edge } from '@domain/entities/edge.ts';
 import type { Node } from '@domain/entities/node.ts';
 import type { GraphAddNodeServiceParams, GraphAddNodeServiceResponse, IGraphAddNodeService } from '@domain/services/iGraphAddNodeService.ts';
 
@@ -17,21 +18,32 @@ export class GraphAddNodeService implements IGraphAddNodeService {
 
         const now = new Date();
 
+        const nodeId = randomUUID();
+
         const node: Node = {
-            id: randomUUID(),
+            id: nodeId,
             graphId: params.graphId,
             type: params.type,
             status: params.status,
             title: params.title,
             description: params.description,
-            links: params.links,
             createdAt: now,
             updatedAt: now
         };
 
+        const edges: Edge[] = params.edges.map(edge => ({
+            id: randomUUID(),
+            graphId: params.graphId,
+            sourceId: nodeId,
+            targetId: edge.targetId,
+            type: edge.type,
+            description: edge.description
+        }));
+
         return {
             success: true,
-            node
+            node,
+            edges
         };
     }
 
@@ -44,9 +56,9 @@ export class GraphAddNodeService implements IGraphAddNodeService {
             return 'Invalid node status';
         }
 
-        for (const link of params.links) {
-            if (!isEdgeType(link.type)) {
-                return 'Invalid link edge type';
+        for (const edge of params.edges) {
+            if (!isEdgeType(edge.type)) {
+                return 'Invalid edge type';
             }
         }
 

@@ -15,7 +15,7 @@ export async function bootDatabase (): Promise<IDatabaseGateway> {
         await client.connect();
     }
 
-    return new MongoDBGateway(client.db());
+    return new MongoDBGateway(client);
 }
 
 export async function shutdownDatabase (): Promise<void> {

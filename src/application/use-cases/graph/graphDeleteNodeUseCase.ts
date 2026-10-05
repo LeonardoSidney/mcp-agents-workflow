@@ -32,7 +32,14 @@ export class GraphDeleteNodeUseCase implements IGraphDeleteNodeUseCase {
             };
         }
 
-        await this.nodeRepository.removeNodeLinks({ graphId: node.graphId, targetId: params.id });
+        const referencedByIds = await this.nodeRepository.listReferencingNodeIds({ graphId: node.graphId, targetId: params.id });
+        if (referencedByIds.length > 0) {
+            const referencedBy = referencedByIds.join(', ');
+            return {
+                success: false,
+                error: `Node is referenced by ${referencedBy}; update those edges first, deleting it would erase the recorded graph memory`
+            };
+        }
 
         const deleted = await this.nodeRepository.deleteNode({ id: params.id });
         if (!deleted) {
