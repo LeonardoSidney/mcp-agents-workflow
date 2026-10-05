@@ -1,35 +1,28 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import { EDGE_TYPES } from '@domain/constants/edge-types.ts';
 import { NODE_STATUS } from '@domain/constants/node-status.ts';
 import { NODE_TYPES } from '@domain/constants/node-types.ts';
 import { graphAddNodeController, graphDeleteNodeController, graphGetNodeController, graphGetNodesController, graphSearchNodesController, graphUpdateNodeController } from '@src/container.ts';
 
 const NODE_TYPE_VALUES = Object.values(NODE_TYPES).map(nodeType => nodeType.value);
-const EDGE_TYPE_VALUES = Object.values(EDGE_TYPES).map(edgeType => edgeType.value);
 const NODE_STATUS_VALUES = Object.values(NODE_STATUS).map(nodeStatus => nodeStatus.value);
 
 export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-add-node',
         {
-            description: 'Add a new node to an existing graph, optionally linked to other nodes of the same graph',
+            description: 'Add a new node to an existing graph. Nodes and edges are independent: after creating the node, use graph-add-edge to connect it to other nodes of the same graph and record the memory on the edge',
             inputSchema: z.object({
                 graphId: z.uuid().describe('Graph (project) id this node belongs to (uuidv4)'),
                 type: z.enum(NODE_TYPE_VALUES).describe('Node type'),
                 title: z.string().min(1).describe('Node title'),
                 description: z.string().min(1).describe('Node description'),
-                status: z.enum(NODE_STATUS_VALUES).describe('Initial node status').default('pending'),
-                edges: z.array(z.object({
-                    type: z.enum(EDGE_TYPE_VALUES).describe('Edge type to the target node'),
-                    targetId: z.string().min(1).describe('Id of the node this edge points to'),
-                    description: z.string().min(1).optional().describe('Memory recorded on this edge: how the target was resolved or the rule that applies')
-                })).default([]).describe('Edges from this node to other nodes of the same graph')
+                status: z.enum(NODE_STATUS_VALUES).describe('Initial node status').default('pending')
             })
         },
-        async ({ graphId, type, title, description, status, edges }) => {
+        async ({ graphId, type, title, description, status }) => {
             const controller = await graphAddNodeController();
-            const response = await controller.handle({ graphId, type, title, description, status, edges });
+            const response = await controller.handle({ graphId, type, title, description, status });
 
             const text = response.success && response.node
                 ? `Node created successfully.\n${JSON.stringify(response.node, null, 4)}`
@@ -119,22 +112,17 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-update-node',
         {
-            description: 'Update an existing node by id (uuidv4). Provide only the fields to change; omitted fields keep their current value. Pass edges to replace the whole edge list (an empty list clears all edges). Node type cannot be changed.',
+            description: 'Update an existing node by id (uuidv4). Provide only the fields to change; omitted fields keep their current value. Edges are independent of nodes: updating a node never touches its edges, and node type cannot be changed.',
             inputSchema: z.object({
                 id: z.uuid().describe('Node id to update (uuidv4)'),
                 title: z.string().min(1).optional().describe('New node title (omit to keep current)'),
                 description: z.string().min(1).optional().describe('New node description (omit to keep current)'),
-                status: z.enum(NODE_STATUS_VALUES).optional().describe('New node status (omit to keep current)'),
-                edges: z.array(z.object({
-                    type: z.enum(EDGE_TYPE_VALUES).describe('Edge type to the target node'),
-                    targetId: z.string().min(1).describe('Id of the node this edge points to'),
-                    description: z.string().min(1).optional().describe('Memory recorded on this edge: how the target was resolved or the rule that applies')
-                })).optional().describe('New edges list, replacing the current one (omit to keep current)')
+                status: z.enum(NODE_STATUS_VALUES).optional().describe('New node status (omit to keep current)')
             })
         },
-        async ({ id, title, description, status, edges }) => {
+        async ({ id, title, description, status }) => {
             const controller = await graphUpdateNodeController();
-            const response = await controller.handle({ id, title, description, status, edges });
+            const response = await controller.handle({ id, title, description, status });
 
             const text = response.success && response.node
                 ? `Node updated successfully.\n${JSON.stringify(response.node, null, 4)}`
@@ -150,7 +138,7 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-delete-node',
         {
-            description: 'Delete a node from the agent workflow graph by id (uuidv4). The node and its outgoing edges are removed atomically. Refuses deletion while other nodes keep edges to this node, so the recorded graph memory is not lost',
+            description: 'Delete a node from the agent workflow graph by id (uuidv4). Refuses deletion while any edge is attached to the node (incoming or outgoing), because deleting it would erase the recorded graph memory; delete those edges first with graph-delete-edge',
             inputSchema: z.object({
                 id: z.string().min(1).describe('Node id to delete')
             })

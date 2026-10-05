@@ -41,14 +41,6 @@ export class GraphAddNodeUseCase implements IGraphAddNodeUseCase {
             };
         }
 
-        const edgeError = await this.validateEdges(params);
-        if (edgeError) {
-            return {
-                success: false,
-                error: edgeError
-            };
-        }
-
         const mapped = this.graphAddNodeService.mapNode(params);
         if (!mapped.success || !mapped.node) {
             return {
@@ -57,31 +49,12 @@ export class GraphAddNodeUseCase implements IGraphAddNodeUseCase {
             };
         }
 
-        await this.nodeRepository.addNode({ node: mapped.node, edges: mapped.edges ?? [] });
+        await this.nodeRepository.addNode({ node: mapped.node });
 
         return {
             success: true,
-            node: { ...mapped.node, edges: mapped.edges ?? [] }
+            node: mapped.node
         };
-    }
-
-    private async validateEdges (params: GraphAddNodeUseCaseParams): Promise<string | undefined> {
-        for (const edge of params.edges) {
-            if (!edge.targetId?.trim()) {
-                return 'A non-empty node link target id is required';
-            }
-
-            const target = await this.nodeRepository.getNode({ id: edge.targetId });
-            if (!target) {
-                return `Node link target not found: ${edge.targetId}`;
-            }
-
-            if (target.graphId !== params.graphId) {
-                return `Node link target does not belong to graph ${params.graphId}: ${edge.targetId}`;
-            }
-        }
-
-        return undefined;
     }
 
     private validate (params: GraphAddNodeUseCaseParams): string | undefined {

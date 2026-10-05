@@ -13,8 +13,6 @@ services:
       - "4000:3000"
     volumes:
       - ./src:/app/src
-      - ./node_modules:/app/node_modules
-      - ./tsconfig.json:/app/tsconfig.json
     restart: unless-stopped
 
   mongo:
@@ -22,16 +20,12 @@ services:
     container_name: mcp-agents-workflow-mongo
     environment:
       MONGO_INITDB_DATABASE: mcp-agents-workflow
-    entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        mongod --replSet rs0 --bind_ip_all --logpath /dev/null &
-        until mongosh --quiet --norc --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1; do sleep 1; done
-        mongosh --quiet --norc --eval 'try { if (rs.status().myState !== 1) throw new Error("not primary"); } catch (e) { try { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "mongo:27017" }] }) } catch (e2) {} }' >/dev/null 2>&1 || true
-        wait -n
+    command:
+      - --bind_ip_all
+      - --logpath
+      - /dev/null
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --norc --eval 'rs.status().myState' 2>/dev/null | grep -qE '^(1|2)$' || exit 1"]
+      test: ["CMD-SHELL", "mongosh --quiet --norc --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1 || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 30

@@ -1,7 +1,4 @@
-import { randomUUID } from 'node:crypto';
-import { isEdgeType } from '@domain/guards/edge-type.ts';
 import { isNodeStatus } from '@domain/guards/node-status.ts';
-import type { Edge } from '@domain/entities/edge.ts';
 import type { Node } from '@domain/entities/node.ts';
 import type { GraphUpdateNodeServiceParams, GraphUpdateNodeServiceResponse, IGraphUpdateNodeService } from '@domain/services/iGraphUpdateNodeService.ts';
 
@@ -32,34 +29,15 @@ export class GraphUpdateNodeService implements IGraphUpdateNodeService {
             updatedAt: now
         };
 
-        let edges: Edge[] | undefined;
-        if (params.edges !== undefined) {
-            edges = params.edges.map(edge => ({
-                id: randomUUID(),
-                graphId: node.graphId,
-                sourceId: node.id,
-                targetId: edge.targetId,
-                type: edge.type,
-                description: edge.description
-            }));
-        }
-
         return {
             success: true,
-            node: updated,
-            edges
+            node: updated
         };
     }
 
     private validate (params: GraphUpdateNodeServiceParams): string | undefined {
         if (params.status !== undefined && !isNodeStatus(params.status)) {
             return 'Invalid node status';
-        }
-
-        for (const edge of params.edges ?? []) {
-            if (!isEdgeType(edge.type)) {
-                return 'Invalid edge type';
-            }
         }
 
         return undefined;

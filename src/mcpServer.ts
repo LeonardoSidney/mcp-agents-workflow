@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/server';
+import { registerEdgeTools } from './mcp/edgeTools.ts';
 import { registerGraphTools } from './mcp/graphTools.ts';
 import { registerNodeTools } from './mcp/nodeTools.ts';
 
@@ -7,6 +8,7 @@ export function createServer (): McpServer {
 
     registerGraphTools(server);
     registerNodeTools(server);
+    registerEdgeTools(server);
 
     return server;
 }

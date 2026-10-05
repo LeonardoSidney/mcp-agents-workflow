@@ -10,6 +10,7 @@ export type Edge = {
 };
 
 export type EdgeReference = {
+    id: string;
     type: EdgeType;
     targetId: string;
     description?: string;
@@ -17,6 +18,7 @@ export type EdgeReference = {
 
 export function toEdgeReference (edge: Edge): EdgeReference {
     return {
+        id: edge.id,
         type: edge.type,
         targetId: edge.targetId,
         description: edge.description

@@ -1,4 +1,4 @@
-import type { INodeRepository, AddNodeRepositoryParams, DeleteNodeRepositoryParams, GetNodeRepositoryParams, GetNodesRepositoryParams, ListReferencingNodeIdsRepositoryParams, UpdateNodeRepositoryParams } from '@domain/repository/iNodeRepository.ts';
+import type { INodeRepository, AddNodeRepositoryParams, DeleteNodeRepositoryParams, GetNodeRepositoryParams, GetNodesRepositoryParams, ListAttachedEdgeIdsRepositoryParams, UpdateNodeRepositoryParams } from '@domain/repository/iNodeRepository.ts';
 import type { NodeWithEdges } from '@domain/entities/node.ts';
 import type { EdgeReference } from '@domain/entities/edge.ts';
 import { toEdgeReference } from '@domain/entities/edge.ts';
@@ -17,9 +17,8 @@ export class NodeRepository implements INodeRepository {
 
     async addNode (params: AddNodeRepositoryParams): Promise<void> {
         const nodeDocument = NodeDTO.to_mongodb(params.node);
-        const edgeDocuments = params.edges.map(EdgeDTO.to_mongodb);
 
-        await this.databaseGateway.addNodeWithEdges({ node: nodeDocument, edges: edgeDocuments });
+        await this.databaseGateway.addNode({ node: nodeDocument });
     }
 
     async getNode (params: GetNodeRepositoryParams): Promise<NodeWithEdges | null> {
@@ -52,19 +51,21 @@ export class NodeRepository implements INodeRepository {
 
     async updateNode (params: UpdateNodeRepositoryParams): Promise<boolean> {
         const nodeDocument = NodeDTO.to_mongodb(params.node);
-        const edgeDocuments = params.edges ? params.edges.map(EdgeDTO.to_mongodb) : undefined;
 
-        return this.databaseGateway.updateNodeWithEdges({ node: nodeDocument, edges: edgeDocuments });
+        return this.databaseGateway.updateNode({ node: nodeDocument });
     }
 
     async deleteNode (params: DeleteNodeRepositoryParams): Promise<boolean> {
-        return this.databaseGateway.deleteNodeWithEdges({ id: params.id });
+        return this.databaseGateway.deleteNode({ id: params.id });
     }
 
-    async listReferencingNodeIds (params: ListReferencingNodeIdsRepositoryParams): Promise<string[]> {
-        const documents = await this.databaseGateway.listEdgesByTarget({ graphId: params.graphId, targetId: params.targetId });
+    async listAttachedEdgeIds (params: ListAttachedEdgeIdsRepositoryParams): Promise<string[]> {
+        const outgoing = await this.databaseGateway.listEdgesBySource({ graphId: params.graphId, sourceId: params.nodeId });
+        const incoming = await this.databaseGateway.listEdgesByTarget({ graphId: params.graphId, targetId: params.nodeId });
 
-        return documents.map(document => document.source_id);
+        const attachedIds = [...outgoing, ...incoming].map(document => document.id);
+
+        return attachedIds.filter((id, index) => attachedIds.indexOf(id) === index);
     }
 
     private async edgesBySource (graphId: string, sourceId: string): Promise<EdgeReference[]> {

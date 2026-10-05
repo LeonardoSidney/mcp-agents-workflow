@@ -9,7 +9,7 @@ type SearchHit = {
     score: number;
 };
 
-const { addNode, addProject, callTool, edgesCollection, fetchNode, nodesCollection, textOf } = mcpTestHarness();
+const { addEdge, addNode, addProject, callTool, edgesCollection, fetchNode, nodesCollection, textOf } = mcpTestHarness();
 
 describe('MCP server - node lifecycle', () => {
     test('adds a node linked to an existing graph', async () => {
@@ -61,59 +61,21 @@ describe('MCP server - node lifecycle', () => {
         expect(stored).toMatchObject({ status: 'completed', title: 'Build the server' });
     });
 
-    test('replaces the whole edges list on update, an empty list clears edges', async () => {
-        const graph = await addProject('Re-edge Project', 'Project used to replace edges', 'waiting_goal');
+    test('updating a node never touches its edges', async () => {
+        const graph = await addProject('Edge-Touch Project', 'Project used to verify node updates stay away from edges', 'waiting_goal');
         const goal = await addNode(graph.id, 'GOAL', 'Main goal', 'Main goal of the project');
-        const related = await addNode(graph.id, 'FACT', 'Known fact', 'Established fact');
-        const task = await addNode(graph.id, 'TASK', 'Dependent task', 'Task linked to the goal', [
-            { type: 'PART_OF', targetId: goal.id }
-        ]);
-
-        const relinked = await callTool('graph-update-node', {
-            id: task.id,
-            edges: [{ type: 'DERIVED_FROM', targetId: related.id }]
-        });
-        expect(relinked.isError).toBeFalsy();
-
-        const replacedEdges = await edgesCollection.find({ source_id: task.id }).toArray();
-        expect(replacedEdges).toHaveLength(1);
-        expect(replacedEdges[0]).toMatchObject({ type: 'DERIVED_FROM', target_id: related.id });
-
-        const cleared = await callTool('graph-update-node', { id: task.id, edges: [] });
-        expect(cleared.isError).toBeFalsy();
-
-        const remainingEdges = await edgesCollection.find({ source_id: task.id }).toArray();
-        expect(remainingEdges).toHaveLength(0);
-    });
-
-    test('keeps edges when the update does not mention them', async () => {
-        const graph = await addProject('Keep Edges Project', 'Project used to test edge preservation on update', 'waiting_goal');
-        const goal = await addNode(graph.id, 'GOAL', 'Main goal', 'Main goal of the project');
-        const task = await addNode(graph.id, 'TASK', 'Linked task', 'Task linked to the goal', [
-            { type: 'PART_OF', targetId: goal.id }
-        ]);
+        const task = await addNode(graph.id, 'TASK', 'Dependent task', 'Task linked to the goal');
+        const edge = await addEdge(graph.id, task.id, goal.id, 'PART_OF');
 
         const updated = await callTool('graph-update-node', { id: task.id, status: 'in_progress' });
         expect(updated.isError).toBeFalsy();
 
-        const remainingEdges = await edgesCollection.find({ source_id: task.id }).toArray();
-        expect(remainingEdges).toHaveLength(1);
-        expect(remainingEdges[0]).toMatchObject({ type: 'PART_OF', target_id: goal.id });
-    });
+        const fetched = await fetchNode(task.id);
+        expect(fetched.isError).toBeFalsy();
 
-    test('allows two parallel edges of the same type and target carrying different memories', async () => {
-        const graph = await addProject('Parallel Edges Project', 'Project used to test parallel edges', 'waiting_goal');
-        const rule = await addNode(graph.id, 'USER_DECISION', 'First rule', 'First recorded rule');
-        const task = await addNode(graph.id, 'TASK', 'Constrained task', 'Task with two constraints', [
-            { type: 'CONSTRAINED_BY', targetId: rule.id, description: 'First memory' },
-            { type: 'CONSTRAINED_BY', targetId: rule.id, description: 'Second memory' }
-        ]);
-
-        expect(task.edges).toHaveLength(2);
-
-        const stored = await edgesCollection.find({ source_id: task.id }).toArray();
-        expect(stored).toHaveLength(2);
-        expect(stored.map(edge => edge.description).sort()).toEqual(['First memory', 'Second memory']);
+        const stored = JSON.parse(textOf(fetched)) as NodeWithEdges;
+        expect(stored.edges).toHaveLength(1);
+        expect(stored.edges[0]).toMatchObject({ id: edge.id, type: 'PART_OF', targetId: goal.id });
     });
 
     test('refuses to update a node that does not exist', async () => {
@@ -135,21 +97,6 @@ describe('MCP server - node lifecycle', () => {
         expect(textOf(result)).toContain('At least one field must be provided');
     });
 
-    test('refuses update edges to a target node of another graph', async () => {
-        const firstGraph = await addProject('First Update Graph', 'First graph', 'waiting_goal');
-        const secondGraph = await addProject('Second Update Graph', 'Second graph', 'waiting_goal');
-        const foreignNode = await addNode(firstGraph.id, 'GOAL', 'Foreign goal', 'Goal from another graph');
-        const task = await addNode(secondGraph.id, 'TASK', 'Local task', 'Task of the second graph');
-
-        const result = await callTool('graph-update-node', {
-            id: task.id,
-            edges: [{ type: 'RELATED_TO', targetId: foreignNode.id }]
-        });
-
-        expect(result.isError).toBe(true);
-        expect(textOf(result)).toContain('does not belong to graph');
-    });
-
     test('refuses to add a node for a graph that does not exist', async () => {
         const missingGraphId = '00000000-0000-4000-8000-000000000000';
 
@@ -158,8 +105,7 @@ describe('MCP server - node lifecycle', () => {
             type: 'GOAL',
             title: 'Orphan node',
             description: 'Node pointing to a graph that does not exist',
-            status: 'pending',
-            edges: []
+            status: 'pending'
         });
 
         expect(result.isError).toBe(true);
@@ -169,12 +115,12 @@ describe('MCP server - node lifecycle', () => {
         expect(saved).toHaveLength(0);
     });
 
-    test('records an edge to a target node of the same graph', async () => {
+    test('adds an edge to a target node of the same graph', async () => {
         const graph = await addProject('Linked Project', 'Project hosting linked nodes', 'waiting_goal');
         const goal = await addNode(graph.id, 'GOAL', 'Main goal', 'Main goal of the project');
-        const task = await addNode(graph.id, 'TASK', 'Build the server', 'Build the MCP server', [
-            { type: 'PART_OF', targetId: goal.id }
-        ]);
+        const task = await addNode(graph.id, 'TASK', 'Build the server', 'Build the MCP server');
+
+        const edge = await addEdge(graph.id, task.id, goal.id, 'PART_OF');
 
         const saved = await nodesCollection.find({ id: task.id }).toArray();
         const storedTask = saved[0];
@@ -182,31 +128,46 @@ describe('MCP server - node lifecycle', () => {
             throw new Error(`Expected the task node to be stored: ${task.id}`);
         }
         expect(storedTask).not.toHaveProperty('links');
+        expect(storedTask).not.toHaveProperty('edges');
 
         const edgeDocuments = await edgesCollection.find({ source_id: task.id }).toArray();
         expect(edgeDocuments).toHaveLength(1);
-        expect(edgeDocuments[0]).toMatchObject({ type: 'PART_OF', target_id: goal.id, graph_id: graph.id });
+        const edgeDocument = edgeDocuments[0];
+        if (!edgeDocument?.id) {
+            throw new Error('Expected the stored edge to carry an id');
+        }
+
+        expect(edgeDocument).toMatchObject({ id: edge.id, type: 'PART_OF', target_id: goal.id, graph_id: graph.id });
+
+        const fetched = await fetchNode(task.id);
+        expect(fetched.isError).toBeFalsy();
+
+        const stored = JSON.parse(textOf(fetched)) as NodeWithEdges;
+        expect(stored.edges).toHaveLength(1);
+        expect(stored.edges[0]).toMatchObject({ id: edge.id, type: 'PART_OF', targetId: goal.id });
     });
 
-    test('refuses edges to a target node of another graph', async () => {
+    test('refuses an edge to a target node of another graph', async () => {
         const firstGraph = await addProject('First Graph', 'First graph', 'waiting_goal');
         const secondGraph = await addProject('Second Graph', 'Second graph', 'waiting_goal');
         const foreignNode = await addNode(firstGraph.id, 'GOAL', 'Foreign goal', 'Goal from another graph');
+        const task = await addNode(secondGraph.id, 'TASK', 'Cross graph task', 'Task linking to a node of another graph');
 
-        const result = await callTool('graph-add-node', {
+        const result = await callTool('graph-add-edge', {
             graphId: secondGraph.id,
-            type: 'TASK',
-            title: 'Cross graph task',
-            description: 'Task linking to a node of another graph',
-            status: 'pending',
-            edges: [{ type: 'RELATED_TO', targetId: foreignNode.id }]
+            sourceId: task.id,
+            targetId: foreignNode.id,
+            type: 'RELATED_TO'
         });
 
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('does not belong to graph');
 
         const saved = await nodesCollection.find({}).toArray();
-        expect(saved).toHaveLength(1);
+        expect(saved).toHaveLength(2);
+
+        const storedEdges = await edgesCollection.find({}).toArray();
+        expect(storedEdges).toHaveLength(0);
     });
 
     test('lists the nodes of one graph sorted by the most recent first', async () => {
@@ -267,40 +228,38 @@ describe('MCP server - node lifecycle', () => {
         expect(textOf(listed)).not.toContain('created_at');
     });
 
-    test('keeps the description recorded on an edge', async () => {
+    test('keeps the description recorded on an edge when fetching the source node', async () => {
         const graph = await addProject('Edge Memory Project', 'Project used to record edge memory', 'waiting_goal');
         const rule = await addNode(graph.id, 'USER_DECISION', 'Reimbursement rule', 'Only expenses under the daily limit are reimbursed');
-        const task = await addNode(graph.id, 'TASK', 'Prepare expense report', 'Prepare the final expense report', [
-            { type: 'CONSTRAINED_BY', targetId: rule.id, description: 'The daily limit rule applies because the report covers travel days' }
-        ]);
+        const task = await addNode(graph.id, 'TASK', 'Prepare expense report', 'Prepare the final expense report');
+        await addEdge(graph.id, task.id, rule.id, 'CONSTRAINED_BY', 'The daily limit rule applies because the report covers travel days');
 
         const fetched = await fetchNode(task.id);
         expect(fetched.isError).toBeFalsy();
 
         const stored = JSON.parse(textOf(fetched)) as NodeWithEdges;
-        expect(stored.edges).toEqual([
-            { type: 'CONSTRAINED_BY', targetId: rule.id, description: 'The daily limit rule applies because the report covers travel days' }
-        ]);
+        expect(stored.edges).toHaveLength(1);
+        expect(stored.edges[0]).toMatchObject({
+            type: 'CONSTRAINED_BY',
+            targetId: rule.id,
+            description: 'The daily limit rule applies because the report covers travel days'
+        });
     });
 
-    test('refuses to delete a node that other nodes still refer to', async () => {
+    test('refuses to delete a node that an edge still points to', async () => {
         const graph = await addProject('Delete Project', 'Project used to delete a node', 'waiting_goal');
         const goal = await addNode(graph.id, 'GOAL', 'Removable goal', 'Goal that will be deleted');
-        const task = await addNode(graph.id, 'TASK', 'Dependent task', 'Task linked to the goal', [
-            { type: 'PART_OF', targetId: goal.id }
-        ]);
+        const task = await addNode(graph.id, 'TASK', 'Dependent task', 'Task linked to the goal');
+        const edge = await addEdge(graph.id, task.id, goal.id, 'PART_OF');
 
         const deleteResult = await callTool('graph-delete-node', { id: goal.id });
 
         expect(deleteResult.isError).toBe(true);
-        expect(textOf(deleteResult)).toContain('is referenced by');
-        expect(textOf(deleteResult)).toContain(task.id);
+        expect(textOf(deleteResult)).toContain('is attached by');
+        expect(textOf(deleteResult)).toContain(edge.id);
 
-        const survivorFetch = await fetchNode(task.id);
+        const survivorFetch = await fetchNode(goal.id);
         expect(survivorFetch.isError).toBeFalsy();
-
-        const remaining = await fetchNode(goal.id);
-        expect(remaining.isError).toBeFalsy();
     });
 
     test('refuses to delete a node that does not exist', async () => {
@@ -312,16 +271,21 @@ describe('MCP server - node lifecycle', () => {
         expect(textOf(result)).toContain('Node not found');
     });
 
-    test('deleting a node also removes its outgoing edges', async () => {
+    test('refuses to delete a node with outgoing edges until they are removed', async () => {
         const graph = await addProject('Orphan Project', 'Project used to test outgoing edge cleanup', 'waiting_goal');
         const goal = await addNode(graph.id, 'GOAL', 'Orphan goal', 'Goal pointed at by the removed task');
-        const task = await addNode(graph.id, 'TASK', 'Orphan source task', 'Task whose edges must be cleaned up', [
-            { type: 'PART_OF', targetId: goal.id, description: 'Records how the goal was resolved' }
-        ]);
+        const task = await addNode(graph.id, 'TASK', 'Orphan source task', 'Task whose edges must be removed first');
+        const edge = await addEdge(graph.id, task.id, goal.id, 'PART_OF', 'Records how the goal was resolved');
 
-        const result = await callTool('graph-delete-node', { id: task.id });
+        const firstDelete = await callTool('graph-delete-node', { id: task.id });
+        expect(firstDelete.isError).toBe(true);
+        expect(textOf(firstDelete)).toContain('is attached by');
 
-        expect(result.isError).toBeFalsy();
+        const removeEdge = await callTool('graph-delete-edge', { id: edge.id });
+        expect(removeEdge.isError).toBeFalsy();
+
+        const secondDelete = await callTool('graph-delete-node', { id: task.id });
+        expect(secondDelete.isError).toBeFalsy();
 
         const remainingEdges = await edgesCollection.find({}).toArray();
         expect(remainingEdges).toHaveLength(0);
@@ -331,18 +295,19 @@ describe('MCP server - node lifecycle', () => {
         expect(remainingNodes[0]).toMatchObject({ id: goal.id });
     });
 
-    test('allows deleting a node whose referencer was deleted earlier', async () => {
-        const graph = await addProject('Ghost Project', 'Project used to test ghost edge prevention', 'waiting_goal');
+    test('allows deleting a node whose edges were deleted earlier', async () => {
+        const graph = await addProject('Ghost Project', 'Project used to test detached node deletion', 'waiting_goal');
         const goal = await addNode(graph.id, 'GOAL', 'Ghost goal', 'Goal referenced by a soon-removed task');
-        const task = await addNode(graph.id, 'TASK', 'Ghost task', 'Task pointing at the goal', [
-            { type: 'PART_OF', targetId: goal.id }
-        ]);
+        const task = await addNode(graph.id, 'TASK', 'Ghost task', 'Task pointing at the goal');
+        const edge = await addEdge(graph.id, task.id, goal.id, 'PART_OF');
+
+        const removeEdge = await callTool('graph-delete-edge', { id: edge.id });
+        expect(removeEdge.isError).toBeFalsy();
 
         const firstDelete = await callTool('graph-delete-node', { id: task.id });
         expect(firstDelete.isError).toBeFalsy();
 
         const secondDelete = await callTool('graph-delete-node', { id: goal.id });
-
         expect(secondDelete.isError).toBeFalsy();
 
         const remainingNodes = await nodesCollection.find({}).toArray();
@@ -352,19 +317,17 @@ describe('MCP server - node lifecycle', () => {
         expect(remainingEdges).toHaveLength(0);
     });
 
-    test('replacing the edges of a node bumps it to the most recent position', async () => {
+    test('updating a node bumps it to the most recent position', async () => {
         const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
         const graph = await addProject('Bump Order Project', 'Project used to test bump ordering', 'waiting_goal');
         const goal = await addNode(graph.id, 'GOAL', 'Linked goal', 'Goal linked from the task');
-        const task = await addNode(graph.id, 'TASK', 'Linked task', 'Task linked to the goal', [
-            { type: 'PART_OF', targetId: goal.id }
-        ]);
+        const task = await addNode(graph.id, 'TASK', 'Linked task', 'Task linked to the goal');
         await sleep(5);
-        const fresh = await addNode(graph.id, 'FACT', 'Fresh fact', 'Most recent node before the replace');
+        const fresh = await addNode(graph.id, 'FACT', 'Fresh fact', 'Most recent node before the update');
 
-        const relinked = await callTool('graph-update-node', { id: task.id, edges: [] });
-        expect(relinked.isError).toBeFalsy();
+        const bumped = await callTool('graph-update-node', { id: task.id, status: 'in_progress' });
+        expect(bumped.isError).toBeFalsy();
 
         const result = await callTool('graph-get-nodes', { graphId: graph.id });
         expect(result.isError).toBeFalsy();
@@ -387,8 +350,7 @@ describe('MCP server - node lifecycle', () => {
             type: 'TASK',
             title: 'Running task',
             description: 'Task in progress',
-            status: 'in_progress',
-            edges: []
+            status: 'in_progress'
         });
         await addNode(graph.id, 'GOAL', 'Pending goal', 'Goal still pending');
         expect(runningTask.isError).toBeFalsy();

@@ -1,6 +1,5 @@
 import type { NodeStatus } from '@domain/constants/node-status.ts';
 import type { NodeType } from '@domain/constants/node-types.ts';
-import type { Edge } from '@domain/entities/edge.ts';
 import type { Node, NodeWithEdges } from '@domain/entities/node.ts';
 
 export interface INodeRepository {
@@ -9,12 +8,11 @@ export interface INodeRepository {
     getNodes (params: GetNodesRepositoryParams): Promise<NodeWithEdges[]>;
     updateNode (params: UpdateNodeRepositoryParams): Promise<boolean>;
     deleteNode (params: DeleteNodeRepositoryParams): Promise<boolean>;
-    listReferencingNodeIds (params: ListReferencingNodeIdsRepositoryParams): Promise<string[]>;
+    listAttachedEdgeIds (params: ListAttachedEdgeIdsRepositoryParams): Promise<string[]>;
 }
 
 export type AddNodeRepositoryParams = {
     node: Node;
-    edges: Edge[];
 };
 
 export type GetNodeRepositoryParams = {
@@ -30,14 +28,13 @@ export type GetNodesRepositoryParams = {
 
 export type UpdateNodeRepositoryParams = {
     node: Node;
-    edges?: Edge[];
 };
 
 export type DeleteNodeRepositoryParams = {
     id: string;
 };
 
-export type ListReferencingNodeIdsRepositoryParams = {
+export type ListAttachedEdgeIdsRepositoryParams = {
     graphId: string;
-    targetId: string;
+    nodeId: string;
 };

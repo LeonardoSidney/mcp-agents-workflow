@@ -1,14 +1,14 @@
 import { Client, InMemoryTransport, type CallToolResult } from '@modelcontextprotocol/client';
 import { MongoClient, type Collection } from 'mongodb';
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { NodeWithEdges } from '@domain/entities/node.ts';
-import type { EdgeReference } from '@domain/entities/edge.ts';
+import type { NodeSummary } from '@domain/entities/node.ts';
+import type { Edge } from '@domain/entities/edge.ts';
 import type { Project } from '@domain/entities/project.ts';
 import type { EdgeDocument, NodeDocument, ProjectDocument } from '@domain/gateways/iDatabaseGateway.ts';
 import { shutdownDatabase } from '@src/boot.ts';
 import { createServer } from '@src/mcpServer.ts';
 
-const MONGODB_URI = 'mongodb://127.0.0.1:27017/mcp-agents-workflow-test?directConnection=true';
+const MONGODB_URI = 'mongodb://127.0.0.1:27017/mcp-agents-workflow-test';
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function mcpTestHarness () {
@@ -93,16 +93,14 @@ export function mcpTestHarness () {
         graphId: string,
         type: string,
         title: string,
-        description: string,
-        edges: EdgeReference[] = []
-    ): Promise<NodeWithEdges> {
+        description: string
+    ): Promise<NodeSummary> {
         const result = await callTool('graph-add-node', {
             graphId,
             type,
             title,
             description,
-            status: 'pending',
-            edges
+            status: 'pending'
         });
 
         if (result.isError) {
@@ -111,9 +109,38 @@ export function mcpTestHarness () {
         }
 
         const jsonStart = textOf(result).indexOf('{');
-        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as NodeWithEdges;
+        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as NodeSummary;
         if (!parsed.id.match(UUID_V4_REGEX)) {
             throw new Error(`graph-add-node did not return a uuidv4 id: ${parsed.id}`);
+        }
+
+        return parsed;
+    }
+
+    async function addEdge (
+        graphId: string,
+        sourceId: string,
+        targetId: string,
+        type: string,
+        description?: string
+    ): Promise<Edge> {
+        const result = await callTool('graph-add-edge', {
+            graphId,
+            sourceId,
+            targetId,
+            type,
+            ...(description ? { description } : {})
+        });
+
+        if (result.isError) {
+            const message = textOf(result);
+            throw new Error(`graph-add-edge failed: ${message}`);
+        }
+
+        const jsonStart = textOf(result).indexOf('{');
+        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as Edge;
+        if (!parsed.id.match(UUID_V4_REGEX)) {
+            throw new Error(`graph-add-edge did not return a uuidv4 id: ${parsed.id}`);
         }
 
         return parsed;
@@ -132,6 +159,7 @@ export function mcpTestHarness () {
         textOf,
         addProject,
         addNode,
+        addEdge,
         fetchProject,
         fetchNode,
         projectsCollection,

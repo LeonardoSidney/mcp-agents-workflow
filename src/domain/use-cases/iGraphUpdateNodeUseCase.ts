@@ -1,5 +1,4 @@
 import type { NodeStatus } from '@domain/constants/node-status.ts';
-import type { EdgeReference } from '@domain/entities/edge.ts';
 import type { NodeWithEdges } from '@domain/entities/node.ts';
 
 export interface IGraphUpdateNodeUseCase {
@@ -11,7 +10,6 @@ export type GraphUpdateNodeUseCaseParams = {
     title?: string;
     description?: string;
     status?: NodeStatus;
-    edges?: EdgeReference[];
 };
 
 export type GraphUpdateNodeUseCaseResponse = {

@@ -1,10 +1,13 @@
 import type { Filter, MongoClient } from 'mongodb';
 import type {
+    AddEdgeGatewayParams,
     AddGraphGatewayParams,
-    AddNodeWithEdgesGatewayParams,
+    AddNodeGatewayParams,
+    DeleteEdgeGatewayParams,
     DeleteGraphGatewayParams,
     DeleteNodeGatewayParams,
     IDatabaseGateway,
+    ListEdgeGatewayParams,
     ListNodeGatewayParams,
     ListNodesGatewayParams,
     ListGraphGatewayParams,
@@ -13,7 +16,8 @@ import type {
     NodeDocument,
     EdgeDocument,
     ProjectDocument,
-    UpdateNodeWithEdgesGatewayParams
+    UpdateEdgeGatewayParams,
+    UpdateNodeGatewayParams
 } from '@domain/gateways/iDatabaseGateway.ts';
 
 export class MongoDBGateway implements IDatabaseGateway {
@@ -51,24 +55,15 @@ export class MongoDBGateway implements IDatabaseGateway {
         return result.deletedCount > 0;
     }
 
-    async addNodeWithEdges (params: AddNodeWithEdgesGatewayParams): Promise<void> {
-        const { node, edges } = params;
+    async addNode (params: AddNodeGatewayParams): Promise<void> {
+        const collection = this.client.db().collection<NodeDocument>('nodes');
 
-        await this.client.withSession(session => session.withTransaction(async () => {
-            const nodes = this.client.db().collection<NodeDocument>('nodes');
-            const edgeCollection = this.client.db().collection<EdgeDocument>('edges');
-
-            await nodes.insertOne(node, { session });
-
-            if (edges.length > 0) {
-                await edgeCollection.insertMany(edges, { session });
-            }
-        }));
+        await collection.insertOne(params.node);
     }
 
-    async updateNodeWithEdges (params: UpdateNodeWithEdgesGatewayParams): Promise<boolean> {
-        const { node, edges } = params;
-        const nodeCollection = this.client.db().collection<NodeDocument>('nodes');
+    async updateNode (params: UpdateNodeGatewayParams): Promise<boolean> {
+        const collection = this.client.db().collection<NodeDocument>('nodes');
+        const node = params.node;
 
         const update = {
             $set: {
@@ -79,27 +74,9 @@ export class MongoDBGateway implements IDatabaseGateway {
             }
         };
 
-        if (edges === undefined) {
-            const result = await nodeCollection.updateOne({ id: node.id }, update);
+        const result = await collection.updateOne({ id: node.id }, update);
 
-            return result.matchedCount > 0;
-        }
-
-        const edgeCollection = this.client.db().collection<EdgeDocument>('edges');
-
-        return this.client.withSession(session => session.withTransaction(async (): Promise<boolean> => {
-            const result = await nodeCollection.updateOne({ id: node.id }, update, { session });
-            if (result.matchedCount === 0) {
-                return false;
-            }
-
-            await edgeCollection.deleteMany({ graph_id: node.graph_id, source_id: node.id }, { session });
-            if (edges.length > 0) {
-                await edgeCollection.insertMany(edges, { session });
-            }
-
-            return true;
-        }));
+        return result.matchedCount > 0;
     }
 
     async listNode (params: ListNodeGatewayParams): Promise<NodeDocument | null> {
@@ -128,20 +105,48 @@ export class MongoDBGateway implements IDatabaseGateway {
         return cursor.toArray();
     }
 
-    async deleteNodeWithEdges (params: DeleteNodeGatewayParams): Promise<boolean> {
-        return this.client.withSession(session => session.withTransaction(async (): Promise<boolean> => {
-            const nodes = this.client.db().collection<NodeDocument>('nodes');
-            const edgeCollection = this.client.db().collection<EdgeDocument>('edges');
+    async deleteNode (params: DeleteNodeGatewayParams): Promise<boolean> {
+        const collection = this.client.db().collection<NodeDocument>('nodes');
 
-            const result = await nodes.deleteOne({ id: params.id }, { session });
-            if (result.deletedCount === 0) {
-                return false;
+        const result = await collection.deleteOne({ id: params.id });
+
+        return result.deletedCount > 0;
+    }
+
+    async addEdge (params: AddEdgeGatewayParams): Promise<void> {
+        const collection = this.client.db().collection<EdgeDocument>('edges');
+
+        await collection.insertOne(params.edge);
+    }
+
+    async updateEdge (params: UpdateEdgeGatewayParams): Promise<boolean> {
+        const collection = this.client.db().collection<EdgeDocument>('edges');
+        const edge = params.edge;
+
+        const update = {
+            $set: {
+                type: edge.type,
+                description: edge.description
             }
+        };
 
-            await edgeCollection.deleteMany({ source_id: params.id }, { session });
+        const result = await collection.updateOne({ id: edge.id }, update);
 
-            return true;
-        }));
+        return result.matchedCount > 0;
+    }
+
+    async listEdge (params: ListEdgeGatewayParams): Promise<EdgeDocument | null> {
+        const collection = this.client.db().collection<EdgeDocument>('edges');
+
+        return collection.findOne({ id: params.id });
+    }
+
+    async deleteEdge (params: DeleteEdgeGatewayParams): Promise<boolean> {
+        const collection = this.client.db().collection<EdgeDocument>('edges');
+
+        const result = await collection.deleteOne({ graph_id: params.graphId, id: params.id });
+
+        return result.deletedCount > 0;
     }
 
     async listEdgesBySource (params: ListEdgesBySourceGatewayParams): Promise<EdgeDocument[]> {

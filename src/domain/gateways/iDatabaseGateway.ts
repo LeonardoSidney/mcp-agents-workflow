@@ -6,11 +6,15 @@ export interface IDatabaseGateway {
     listGraphs (): Promise<ProjectDocument[]>;
     listGraph (params: ListGraphGatewayParams): Promise<ProjectDocument | null>;
     deleteGraph (params: DeleteGraphGatewayParams): Promise<boolean>;
-    addNodeWithEdges (params: AddNodeWithEdgesGatewayParams): Promise<void>;
-    updateNodeWithEdges (params: UpdateNodeWithEdgesGatewayParams): Promise<boolean>;
+    addNode (params: AddNodeGatewayParams): Promise<void>;
+    updateNode (params: UpdateNodeGatewayParams): Promise<boolean>;
     listNode (params: ListNodeGatewayParams): Promise<NodeDocument | null>;
     listNodes (params: ListNodesGatewayParams): Promise<NodeDocument[]>;
-    deleteNodeWithEdges (params: DeleteNodeGatewayParams): Promise<boolean>;
+    deleteNode (params: DeleteNodeGatewayParams): Promise<boolean>;
+    addEdge (params: AddEdgeGatewayParams): Promise<void>;
+    updateEdge (params: UpdateEdgeGatewayParams): Promise<boolean>;
+    listEdge (params: ListEdgeGatewayParams): Promise<EdgeDocument | null>;
+    deleteEdge (params: DeleteEdgeGatewayParams): Promise<boolean>;
     listEdgesBySource (params: ListEdgesBySourceGatewayParams): Promise<EdgeDocument[]>;
     listEdgesByTarget (params: ListEdgesByTargetGatewayParams): Promise<EdgeDocument[]>;
 }
@@ -27,14 +31,12 @@ export type DeleteGraphGatewayParams = {
     id: string;
 };
 
-export type AddNodeWithEdgesGatewayParams = {
+export type AddNodeGatewayParams = {
     node: NodeDocument;
-    edges: EdgeDocument[];
 };
 
-export type UpdateNodeWithEdgesGatewayParams = {
+export type UpdateNodeGatewayParams = {
     node: NodeDocument;
-    edges?: EdgeDocument[];
 };
 
 export type ListNodeGatewayParams = {
@@ -89,6 +91,23 @@ export type ListEdgesBySourceGatewayParams = {
 export type ListEdgesByTargetGatewayParams = {
     graphId: string;
     targetId: string;
+};
+
+export type AddEdgeGatewayParams = {
+    edge: EdgeDocument;
+};
+
+export type UpdateEdgeGatewayParams = {
+    edge: EdgeDocument;
+};
+
+export type ListEdgeGatewayParams = {
+    id: string;
+};
+
+export type DeleteEdgeGatewayParams = {
+    graphId: string;
+    id: string;
 };
 
 

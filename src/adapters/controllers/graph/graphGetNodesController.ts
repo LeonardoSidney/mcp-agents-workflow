@@ -1,5 +1,5 @@
 import type { GraphGetNodesControllerParams, GraphGetNodesControllerResponse, IGraphGetNodesController } from '@domain/controllers/iGraphGetNodesController.ts';
-import { toNodeSummary } from '@domain/entities/node.ts';
+import { toNodeSummaryWithEdges } from '@domain/entities/node.ts';
 import type { ILogger } from '@domain/logger.ts';
 import type { IGraphGetNodesUseCase } from '@domain/use-cases/iGraphGetNodesUseCase.ts';
 
@@ -22,7 +22,7 @@ export class GraphGetNodesController implements IGraphGetNodesController {
 
         const response = await this.useCase.execute({ graphId, type, status, limit });
 
-        const nodes = response.nodes?.map(node => toNodeSummary(node));
+        const nodes = response.nodes?.map(node => toNodeSummaryWithEdges(node));
 
         return {
             success: response.success,

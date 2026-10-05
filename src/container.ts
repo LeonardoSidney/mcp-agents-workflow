@@ -1,5 +1,7 @@
+import { GraphAddEdgeController } from '@adapters/controllers/graph/graphAddEdgeController.ts';
 import { GraphAddNodeController } from '@adapters/controllers/graph/graphAddNodeController.ts';
 import { GraphAddController } from '@adapters/controllers/graph/graphAddProjectController.ts';
+import { GraphDeleteEdgeController } from '@adapters/controllers/graph/graphDeleteEdgeController.ts';
 import { GraphDeleteNodeController } from '@adapters/controllers/graph/graphDeleteNodeController.ts';
 import { GraphDeleteProjectController } from '@adapters/controllers/graph/graphDeleteProjectController.ts';
 import { GraphGetNodeController } from '@adapters/controllers/graph/graphGetNodeController.ts';
@@ -7,16 +9,21 @@ import { GraphGetNodesController } from '@adapters/controllers/graph/graphGetNod
 import { GraphGetProjectController } from '@adapters/controllers/graph/graphGetProjectController.ts';
 import { GraphGetProjectsController } from '@adapters/controllers/graph/graphGetProjectsController.ts';
 import { GraphSearchNodesController } from '@adapters/controllers/graph/graphSearchNodesController.ts';
+import { GraphUpdateEdgeController } from '@adapters/controllers/graph/graphUpdateEdgeController.ts';
 import { GraphUpdateNodeController } from '@adapters/controllers/graph/graphUpdateNodeController.ts';
 import { ConsoleLogger } from '@adapters/logger/consoleLogger.ts';
+import { EdgeRepository } from '@application/repository/edgeRepository.ts';
 import { NodeRepository } from '@application/repository/nodeRepository.ts';
 import { ProjectRepository } from '@application/repository/projectRepository.ts';
 import { GraphAddNodeService } from '@application/services/graph/graphAddNodeService.ts';
 import { GraphAddService } from '@application/services/graph/graphAddService.ts';
+import { GraphEdgeService } from '@application/services/graph/graphEdgeService.ts';
 import { GraphSearchNodesService } from '@application/services/graph/graphSearchNodesService.ts';
 import { GraphUpdateNodeService } from '@application/services/graph/graphUpdateNodeService.ts';
+import { GraphAddEdgeUseCase } from '@application/use-cases/graph/graphAddEdgeUseCase.ts';
 import { GraphAddNodeUseCase } from '@application/use-cases/graph/graphAddNodeUseCase.ts';
 import { GraphAddUseCase } from '@application/use-cases/graph/graphAddUseCase.ts';
+import { GraphDeleteEdgeUseCase } from '@application/use-cases/graph/graphDeleteEdgeUseCase.ts';
 import { GraphDeleteNodeUseCase } from '@application/use-cases/graph/graphDeleteNodeUseCase.ts';
 import { GraphDeleteProjectUseCase } from '@application/use-cases/graph/graphDeleteProjectUseCase.ts';
 import { GraphGetNodeUseCase } from '@application/use-cases/graph/graphGetNodeUseCase.ts';
@@ -24,6 +31,7 @@ import { GraphGetNodesUseCase } from '@application/use-cases/graph/graphGetNodes
 import { GraphGetProjectUseCase } from '@application/use-cases/graph/graphGetProjectUseCase.ts';
 import { GraphGetProjectsUseCase } from '@application/use-cases/graph/graphGetProjectsUseCase.ts';
 import { GraphSearchNodesUseCase } from '@application/use-cases/graph/graphSearchNodesUseCase.ts';
+import { GraphUpdateEdgeUseCase } from '@application/use-cases/graph/graphUpdateEdgeUseCase.ts';
 import { GraphUpdateNodeUseCase } from '@application/use-cases/graph/graphUpdateNodeUseCase.ts';
 import type { IDatabaseGateway } from '@domain/gateways/iDatabaseGateway.ts';
 import { bootDatabase } from './boot.ts';
@@ -115,4 +123,29 @@ export async function graphSearchNodesController (): Promise<GraphSearchNodesCon
     const graphSearchNodesService = new GraphSearchNodesService();
     const graphSearchNodesUseCase = new GraphSearchNodesUseCase(logger, graphSearchNodesService, projectRepository, nodeRepository);
     return new GraphSearchNodesController(logger, graphSearchNodesUseCase);
+}
+
+export async function graphAddEdgeController (): Promise<GraphAddEdgeController> {
+    const databaseGateway = await database();
+    const projectRepository = new ProjectRepository(databaseGateway);
+    const nodeRepository = new NodeRepository(databaseGateway);
+    const edgeRepository = new EdgeRepository(databaseGateway);
+    const graphAddEdgeService = new GraphEdgeService();
+    const graphAddEdgeUseCase = new GraphAddEdgeUseCase(logger, projectRepository, nodeRepository, edgeRepository, graphAddEdgeService);
+    return new GraphAddEdgeController(logger, graphAddEdgeUseCase);
+}
+
+export async function graphUpdateEdgeController (): Promise<GraphUpdateEdgeController> {
+    const databaseGateway = await database();
+    const edgeRepository = new EdgeRepository(databaseGateway);
+    const graphUpdateEdgeService = new GraphEdgeService();
+    const graphUpdateEdgeUseCase = new GraphUpdateEdgeUseCase(logger, edgeRepository, graphUpdateEdgeService);
+    return new GraphUpdateEdgeController(logger, graphUpdateEdgeUseCase);
+}
+
+export async function graphDeleteEdgeController (): Promise<GraphDeleteEdgeController> {
+    const databaseGateway = await database();
+    const edgeRepository = new EdgeRepository(databaseGateway);
+    const graphDeleteEdgeUseCase = new GraphDeleteEdgeUseCase(logger, edgeRepository);
+    return new GraphDeleteEdgeController(logger, graphDeleteEdgeUseCase);
 }

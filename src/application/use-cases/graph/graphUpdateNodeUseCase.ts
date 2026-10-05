@@ -37,23 +37,11 @@ export class GraphUpdateNodeUseCase implements IGraphUpdateNodeUseCase {
             };
         }
 
-        let edgeError: string | undefined;
-        if (params.edges !== undefined) {
-            edgeError = await this.validateEdges(params, node.graphId);
-        }
-        if (edgeError) {
-            return {
-                success: false,
-                error: edgeError
-            };
-        }
-
         const mapped = this.graphUpdateNodeService.mapUpdate({
             node,
             title: params.title,
             description: params.description,
-            status: params.status,
-            edges: params.edges
+            status: params.status
         });
         if (!mapped.success || !mapped.node) {
             return {
@@ -62,7 +50,7 @@ export class GraphUpdateNodeUseCase implements IGraphUpdateNodeUseCase {
             };
         }
 
-        const persisted = await this.nodeRepository.updateNode({ node: mapped.node, edges: mapped.edges });
+        const persisted = await this.nodeRepository.updateNode({ node: mapped.node });
         if (!persisted) {
             return {
                 success: false,
@@ -72,27 +60,8 @@ export class GraphUpdateNodeUseCase implements IGraphUpdateNodeUseCase {
 
         return {
             success: true,
-            node: { ...mapped.node, edges: params.edges ?? node.edges }
+            node: { ...mapped.node, edges: node.edges }
         };
-    }
-
-    private async validateEdges (params: GraphUpdateNodeUseCaseParams, graphId: string): Promise<string | undefined> {
-        for (const edge of params.edges ?? []) {
-            if (!edge.targetId?.trim()) {
-                return 'A non-empty node link target id is required';
-            }
-
-            const target = await this.nodeRepository.getNode({ id: edge.targetId });
-            if (!target) {
-                return `Node link target not found: ${edge.targetId}`;
-            }
-
-            if (target.graphId !== graphId) {
-                return `Node link target does not belong to graph ${graphId}: ${edge.targetId}`;
-            }
-        }
-
-        return undefined;
     }
 
     private validate (params: GraphUpdateNodeUseCaseParams): string | undefined {
@@ -102,8 +71,7 @@ export class GraphUpdateNodeUseCase implements IGraphUpdateNodeUseCase {
 
         if (params.title === undefined
             && params.description === undefined
-            && params.status === undefined
-            && params.edges === undefined) {
+            && params.status === undefined) {
             return 'At least one field must be provided to update a node';
         }
 
