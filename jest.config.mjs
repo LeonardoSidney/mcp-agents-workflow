@@ -20,5 +20,8 @@ export default {
     '^@adapters/(.*)$': '<rootDir>/src/adapters/$1',
     '^@src/(.*)$': '<rootDir>/src/$1'
   },
+  collectCoverageFrom: [
+    'src/**/*.ts'
+  ],
   testTimeout: 30000
 };

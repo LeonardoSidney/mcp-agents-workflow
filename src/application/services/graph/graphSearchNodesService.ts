@@ -58,47 +58,30 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
     private fieldScore (queryTokens: string[], field: string): number {
         const fieldTokens = this.toTokens(field);
         const totalLength = queryTokens.length + fieldTokens.length;
-        if (totalLength === 0) {
-            return 0;
-        }
 
         const lcs = this.longestCommonSubsequence(queryTokens, fieldTokens);
         return (2 * lcs) / totalLength;
     }
 
     private longestCommonSubsequence (a: string[], b: string[]): number {
-        const rows = a.length;
         const cols = b.length;
+        let previousRow: number[] = new Array<number>(cols + 1).fill(0);
 
-        const table: number[][] = [];
-        for (let i = 0; i <= rows; i++) {
-            table.push(new Array<number>(cols + 1).fill(0));
-        }
+        for (const aToken of a) {
+            const currentRow: number[] = new Array<number>(cols + 1).fill(0);
 
-        for (let i = 1; i <= rows; i++) {
-            const aToken = a[i - 1];
-            for (let j = 1; j <= cols; j++) {
-                const bToken = b[j - 1];
-                const previousRow = table[i - 1];
-                const currentRow = table[i];
-
-                if (!aToken || !bToken || !previousRow || !currentRow) {
-                    continue;
-                }
-
-                if (aToken === bToken) {
-                    const diagonal = previousRow[j - 1] ?? 0;
-                    currentRow[j] = diagonal + 1;
-                    continue;
-                }
-
-                const up = previousRow[j] ?? 0;
-                const left = currentRow[j - 1] ?? 0;
-                currentRow[j] = Math.max(up, left);
+            let j = 0;
+            for (const bToken of b) {
+                j += 1;
+                const diagonal = previousRow[j - 1] as number;
+                const up = previousRow[j] as number;
+                const left = currentRow[j - 1] as number;
+                currentRow[j] = aToken === bToken ? diagonal + 1 : Math.max(up, left);
             }
+
+            previousRow = currentRow;
         }
 
-        const lastRow = table[rows];
-        return lastRow ? (lastRow[cols] ?? 0) : 0;
+        return previousRow[cols] as number;
     }
 }

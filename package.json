@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "seed": "tsx scripts/seed.ts",
-    "test:api": "jest tests/api"
+    "test": "jest tests/unit",
+    "test:api": "jest tests/api",
+    "test:coverage": "jest --coverage tests/unit"
   },
   "keywords": [],
   "type": "module",
