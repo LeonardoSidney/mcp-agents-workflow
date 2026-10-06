@@ -1,10 +1,12 @@
 import type { INodeRepository, AddNodeRepositoryParams, DeleteNodeRepositoryParams, GetNodeRepositoryParams, GetNodesRepositoryParams, ListAttachedEdgeIdsRepositoryParams, UpdateNodeRepositoryParams } from '@domain/repository/iNodeRepository.ts';
-import type { NodeWithEdges } from '@domain/entities/node.ts';
+import type { NodeWithMemos } from '@domain/entities/node.ts';
 import type { EdgeReference } from '@domain/entities/edge.ts';
 import { toEdgeReference } from '@domain/entities/edge.ts';
+import type { Memo } from '@domain/entities/memo.ts';
 import type { IDatabaseGateway } from '@domain/gateways/iDatabaseGateway.ts';
 import { NodeDTO } from '@application/dto/nodeDto.ts';
 import { EdgeDTO } from '@application/dto/edgeDto.ts';
+import { MemoDTO } from '@application/dto/memoDto.ts';
 
 export class NodeRepository implements INodeRepository {
     private readonly databaseGateway: IDatabaseGateway;
@@ -21,19 +23,22 @@ export class NodeRepository implements INodeRepository {
         await this.databaseGateway.addNode({ node: nodeDocument });
     }
 
-    async getNode (params: GetNodeRepositoryParams): Promise<NodeWithEdges | null> {
+    async getNode (params: GetNodeRepositoryParams): Promise<NodeWithMemos | null> {
         const document = await this.databaseGateway.listNode({ id: params.id });
         if (!document) {
             return null;
         }
 
         const node = NodeDTO.to_domain(document);
-        const edges = await this.edgesBySource(node.graphId, node.id);
+        const [edges, memos] = await Promise.all([
+            this.edgesBySource(node.graphId, node.id),
+            this.memosByNode(node.id)
+        ]);
 
-        return { ...node, edges };
+        return { ...node, edges, memos };
     }
 
-    async getNodes (params: GetNodesRepositoryParams): Promise<NodeWithEdges[]> {
+    async getNodes (params: GetNodesRepositoryParams): Promise<NodeWithMemos[]> {
         const documents = await this.databaseGateway.listNodes({
             graphId: params.graphId,
             type: params.type,
@@ -43,9 +48,12 @@ export class NodeRepository implements INodeRepository {
 
         return Promise.all(documents.map(async document => {
             const node = NodeDTO.to_domain(document);
-            const edges = await this.edgesBySource(node.graphId, node.id);
+            const [edges, memos] = await Promise.all([
+                this.edgesBySource(node.graphId, node.id),
+                this.memosByNode(node.id)
+            ]);
 
-            return { ...node, edges };
+            return { ...node, edges, memos };
         }));
     }
 
@@ -72,5 +80,11 @@ export class NodeRepository implements INodeRepository {
         const documents = await this.databaseGateway.listEdgesBySource({ graphId, sourceId });
 
         return documents.map(document => toEdgeReference(EdgeDTO.to_domain(document)));
+    }
+
+    private async memosByNode (nodeId: string): Promise<Memo[]> {
+        const documents = await this.databaseGateway.listMemosByNode({ nodeId });
+
+        return documents.map(document => MemoDTO.to_domain(document));
     }
 }

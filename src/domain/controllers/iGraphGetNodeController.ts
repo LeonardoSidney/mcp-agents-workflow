@@ -1,4 +1,4 @@
-import type { NodeSummaryWithEdges } from '@domain/entities/node.ts';
+import type { NodeSummaryWithMemos } from '@domain/entities/node.ts';
 
 export interface IGraphGetNodeController {
     handle (params: GraphGetNodeControllerParams): Promise<GraphGetNodeControllerResponse>;
@@ -10,6 +10,6 @@ export type GraphGetNodeControllerParams = {
 
 export type GraphGetNodeControllerResponse = {
     success: boolean;
-    node?: NodeSummaryWithEdges;
+    node?: NodeSummaryWithMemos;
     error?: string;
 };

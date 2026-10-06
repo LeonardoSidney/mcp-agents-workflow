@@ -15,10 +15,12 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
         for (const node of params.nodes) {
             const titleScore = this.fieldScore(queryTokens, node.title);
             const descriptionScore = this.fieldScore(queryTokens, node.description);
-            const memoryText = node.edges
-                .map(edge => edge.description)
-                .filter((description): description is string => Boolean(description))
-                .join(' ');
+            const memoryText = [
+                ...node.edges
+                    .map(edge => edge.description)
+                    .filter((description): description is string => Boolean(description)),
+                ...node.memos.map(memo => memo.text)
+            ].join(' ');
             const memoryScore = this.fieldScore(queryTokens, memoryText);
 
             if (titleScore === 0 && descriptionScore === 0 && memoryScore === 0) {

@@ -1,17 +1,21 @@
 import type { ILogger } from '@domain/logger.ts';
 import type { INodeRepository } from '@domain/repository/iNodeRepository.ts';
+import type { IMemoRepository } from '@domain/repository/iMemoRepository.ts';
 import type { GraphDeleteNodeUseCaseParams, GraphDeleteNodeUseCaseResponse, IGraphDeleteNodeUseCase } from '@domain/use-cases/iGraphDeleteNodeUseCase.ts';
 
 export class GraphDeleteNodeUseCase implements IGraphDeleteNodeUseCase {
     private readonly logger: ILogger;
     private readonly nodeRepository: INodeRepository;
+    private readonly memoRepository: IMemoRepository;
 
     constructor (
         logger: ILogger,
-        nodeRepository: INodeRepository
+        nodeRepository: INodeRepository,
+        memoRepository: IMemoRepository
     ) {
         this.logger = logger;
         this.nodeRepository = nodeRepository;
+        this.memoRepository = memoRepository;
     }
 
     async execute (params: GraphDeleteNodeUseCaseParams): Promise<GraphDeleteNodeUseCaseResponse> {
@@ -40,6 +44,8 @@ export class GraphDeleteNodeUseCase implements IGraphDeleteNodeUseCase {
                 error: `Node is attached by ${attachedTo}; delete or redirect those edges first, deleting it would erase the recorded graph memory`
             };
         }
+
+        await this.memoRepository.deleteMemosByNode({ nodeId: params.id });
 
         const deleted = await this.nodeRepository.deleteNode({ id: params.id });
         if (!deleted) {

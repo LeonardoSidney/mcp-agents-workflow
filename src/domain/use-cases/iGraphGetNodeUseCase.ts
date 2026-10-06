@@ -1,4 +1,4 @@
-import type { NodeWithEdges } from '@domain/entities/node.ts';
+import type { NodeWithMemos } from '@domain/entities/node.ts';
 
 export interface IGraphGetNodeUseCase {
     execute (params: GraphGetNodeUseCaseParams): Promise<GraphGetNodeUseCaseResponse>;
@@ -10,6 +10,6 @@ export type GraphGetNodeUseCaseParams = {
 
 export type GraphGetNodeUseCaseResponse = {
     success: boolean;
-    node?: NodeWithEdges;
+    node?: NodeWithMemos;
     error?: string;
 };

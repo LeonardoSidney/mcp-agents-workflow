@@ -1,11 +1,11 @@
-import type { NodeSummaryWithEdges } from '@domain/entities/node.ts';
+import type { NodeSummaryWithMemos } from '@domain/entities/node.ts';
 
 export interface IGraphSearchNodesController {
     handle (params: GraphSearchNodesControllerParams): Promise<GraphSearchNodesControllerResponse>;
 }
 
 export type NodeSearchSummaryResult = {
-    node: NodeSummaryWithEdges;
+    node: NodeSummaryWithMemos;
     titleScore: number;
     descriptionScore: number;
     memoryScore: number;

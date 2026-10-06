@@ -1,5 +1,5 @@
 import type { NodeStatus } from '@domain/constants/node-status.ts';
-import type { NodeWithEdges } from '@domain/entities/node.ts';
+import type { NodeWithMemos } from '@domain/entities/node.ts';
 
 export interface IGraphUpdateNodeUseCase {
     execute (params: GraphUpdateNodeUseCaseParams): Promise<GraphUpdateNodeUseCaseResponse>;
@@ -14,6 +14,6 @@ export type GraphUpdateNodeUseCaseParams = {
 
 export type GraphUpdateNodeUseCaseResponse = {
     success: boolean;
-    node?: NodeWithEdges;
+    node?: NodeWithMemos;
     error?: string;
 };

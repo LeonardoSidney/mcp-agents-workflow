@@ -1,11 +1,11 @@
-import type { NodeWithEdges } from '@domain/entities/node.ts';
+import type { NodeWithMemos } from '@domain/entities/node.ts';
 
 export interface IGraphSearchNodesService {
     scoreNodes (params: GraphSearchNodesServiceParams): GraphSearchNodesServiceResponse;
 }
 
 export type NodeSearchResult = {
-    node: NodeWithEdges;
+    node: NodeWithMemos;
     titleScore: number;
     descriptionScore: number;
     memoryScore: number;
@@ -14,7 +14,7 @@ export type NodeSearchResult = {
 
 export type GraphSearchNodesServiceParams = {
     text: string;
-    nodes: NodeWithEdges[];
+    nodes: NodeWithMemos[];
 };
 
 export type GraphSearchNodesServiceResponse = {

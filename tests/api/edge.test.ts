@@ -1,5 +1,5 @@
 import type { Edge } from '@domain/entities/edge.ts';
-import type { NodeWithEdges } from '@domain/entities/node.ts';
+import type { NodeWithMemos } from '@domain/entities/node.ts';
 import { mcpTestHarness } from './mcpHarness.ts';
 
 const { addEdge, addNode, addProject, callTool, edgesCollection, fetchNode, nodesCollection, textOf } = mcpTestHarness();
@@ -201,7 +201,7 @@ describe('MCP server - edge lifecycle', () => {
         const fetchedSource = await fetchNode(source.id);
         expect(fetchedSource.isError).toBeFalsy();
 
-        const sourceNode = JSON.parse(textOf(fetchedSource)) as NodeWithEdges;
+        const sourceNode = JSON.parse(textOf(fetchedSource)) as NodeWithMemos;
         expect(sourceNode.edges).toHaveLength(1);
         expect(sourceNode.edges[0]).toMatchObject({ id: edge.id, description: 'New memory' });
     });
@@ -224,7 +224,7 @@ describe('MCP server - edge lifecycle', () => {
         const fetchedSource = await fetchNode(source.id);
         expect(fetchedSource.isError).toBeFalsy();
 
-        const sourceNode = JSON.parse(textOf(fetchedSource)) as NodeWithEdges;
+        const sourceNode = JSON.parse(textOf(fetchedSource)) as NodeWithMemos;
         expect(sourceNode.edges).toEqual([]);
     });
 

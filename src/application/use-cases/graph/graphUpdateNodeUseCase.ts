@@ -60,7 +60,7 @@ export class GraphUpdateNodeUseCase implements IGraphUpdateNodeUseCase {
 
         return {
             success: true,
-            node: { ...mapped.node, edges: node.edges }
+            node: { ...mapped.node, edges: node.edges, memos: node.memos }
         };
     }
 

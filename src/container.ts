@@ -9,19 +9,23 @@ import { GraphGetNodesController } from '@adapters/controllers/graph/graphGetNod
 import { GraphGetProjectController } from '@adapters/controllers/graph/graphGetProjectController.ts';
 import { GraphGetProjectsController } from '@adapters/controllers/graph/graphGetProjectsController.ts';
 import { GraphSearchNodesController } from '@adapters/controllers/graph/graphSearchNodesController.ts';
+import { GraphAppendMemoController } from '@adapters/controllers/graph/graphAppendMemoController.ts';
 import { GraphUpdateEdgeController } from '@adapters/controllers/graph/graphUpdateEdgeController.ts';
 import { GraphUpdateNodeController } from '@adapters/controllers/graph/graphUpdateNodeController.ts';
 import { ConsoleLogger } from '@adapters/logger/consoleLogger.ts';
 import { EdgeRepository } from '@application/repository/edgeRepository.ts';
+import { MemoRepository } from '@application/repository/memoRepository.ts';
 import { NodeRepository } from '@application/repository/nodeRepository.ts';
 import { ProjectRepository } from '@application/repository/projectRepository.ts';
 import { GraphAddNodeService } from '@application/services/graph/graphAddNodeService.ts';
+import { GraphAppendMemoService } from '@application/services/graph/graphAppendMemoService.ts';
 import { GraphAddService } from '@application/services/graph/graphAddService.ts';
 import { GraphEdgeService } from '@application/services/graph/graphEdgeService.ts';
 import { GraphSearchNodesService } from '@application/services/graph/graphSearchNodesService.ts';
 import { GraphUpdateNodeService } from '@application/services/graph/graphUpdateNodeService.ts';
 import { GraphAddEdgeUseCase } from '@application/use-cases/graph/graphAddEdgeUseCase.ts';
 import { GraphAddNodeUseCase } from '@application/use-cases/graph/graphAddNodeUseCase.ts';
+import { GraphAppendMemoUseCase } from '@application/use-cases/graph/graphAppendMemoUseCase.ts';
 import { GraphAddUseCase } from '@application/use-cases/graph/graphAddUseCase.ts';
 import { GraphDeleteEdgeUseCase } from '@application/use-cases/graph/graphDeleteEdgeUseCase.ts';
 import { GraphDeleteNodeUseCase } from '@application/use-cases/graph/graphDeleteNodeUseCase.ts';
@@ -112,8 +116,18 @@ export async function graphGetNodeController (): Promise<GraphGetNodeController>
 export async function graphDeleteNodeController (): Promise<GraphDeleteNodeController> {
     const databaseGateway = await database();
     const nodeRepository = new NodeRepository(databaseGateway);
-    const graphDeleteNodeUseCase = new GraphDeleteNodeUseCase(logger, nodeRepository);
+    const memoRepository = new MemoRepository(databaseGateway);
+    const graphDeleteNodeUseCase = new GraphDeleteNodeUseCase(logger, nodeRepository, memoRepository);
     return new GraphDeleteNodeController(logger, graphDeleteNodeUseCase);
+}
+
+export async function graphAppendMemoController (): Promise<GraphAppendMemoController> {
+    const databaseGateway = await database();
+    const nodeRepository = new NodeRepository(databaseGateway);
+    const memoRepository = new MemoRepository(databaseGateway);
+    const graphAppendMemoService = new GraphAppendMemoService();
+    const graphAppendMemoUseCase = new GraphAppendMemoUseCase(logger, graphAppendMemoService, nodeRepository, memoRepository);
+    return new GraphAppendMemoController(logger, graphAppendMemoUseCase);
 }
 
 export async function graphSearchNodesController (): Promise<GraphSearchNodesController> {

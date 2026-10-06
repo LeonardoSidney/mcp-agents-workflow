@@ -3,8 +3,9 @@ import { MongoClient, type Collection } from 'mongodb';
 import type { McpServer } from '@modelcontextprotocol/server';
 import type { NodeSummary } from '@domain/entities/node.ts';
 import type { Edge } from '@domain/entities/edge.ts';
+import type { Memo } from '@domain/entities/memo.ts';
 import type { Project } from '@domain/entities/project.ts';
-import type { EdgeDocument, NodeDocument, ProjectDocument } from '@domain/gateways/iDatabaseGateway.ts';
+import type { EdgeDocument, MemoDocument, NodeDocument, ProjectDocument } from '@domain/gateways/iDatabaseGateway.ts';
 import { shutdownDatabase } from '@src/boot.ts';
 import { createServer } from '@src/mcpServer.ts';
 
@@ -16,6 +17,7 @@ export function mcpTestHarness () {
     const projectsCollection: Collection<ProjectDocument> = mongoClient.db().collection('projects');
     const nodesCollection: Collection<NodeDocument> = mongoClient.db().collection('nodes');
     const edgesCollection: Collection<EdgeDocument> = mongoClient.db().collection('edges');
+    const memosCollection: Collection<MemoDocument> = mongoClient.db().collection('memos');
 
     let server: McpServer | undefined;
     let client: Client | undefined;
@@ -28,6 +30,7 @@ export function mcpTestHarness () {
     afterAll(async () => {
         await nodesCollection.deleteMany({});
         await edgesCollection.deleteMany({});
+        await memosCollection.deleteMany({});
         await projectsCollection.deleteMany({});
         await shutdownDatabase();
         await mongoClient.close();
@@ -36,6 +39,7 @@ export function mcpTestHarness () {
     beforeEach(async () => {
         await nodesCollection.deleteMany({});
         await edgesCollection.deleteMany({});
+        await memosCollection.deleteMany({});
         await projectsCollection.deleteMany({});
 
         const [serverTransport, clientTransport] = InMemoryTransport.createLinkedPair();
@@ -154,16 +158,35 @@ export function mcpTestHarness () {
         return callTool('graph-get-node', { id });
     }
 
+    async function addMemo (nodeId: string, author: string, text: string): Promise<Memo> {
+        const result = await callTool('graph-append-memo', { id: nodeId, author, text });
+
+        if (result.isError) {
+            const message = textOf(result);
+            throw new Error(`graph-append-memo failed: ${message}`);
+        }
+
+        const jsonStart = textOf(result).indexOf('{');
+        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as Memo;
+        if (!parsed.id.match(UUID_V4_REGEX)) {
+            throw new Error(`graph-append-memo did not return a uuidv4 id: ${parsed.id}`);
+        }
+
+        return parsed;
+    }
+
     return {
         callTool,
         textOf,
         addProject,
         addNode,
         addEdge,
+        addMemo,
         fetchProject,
         fetchNode,
         projectsCollection,
         nodesCollection,
-        edgesCollection
+        edgesCollection,
+        memosCollection
     };
 }

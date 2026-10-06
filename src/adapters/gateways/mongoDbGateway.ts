@@ -15,9 +15,13 @@ import type {
     ListEdgesByTargetGatewayParams,
     NodeDocument,
     EdgeDocument,
+    MemoDocument,
     ProjectDocument,
     UpdateEdgeGatewayParams,
-    UpdateNodeGatewayParams
+    UpdateNodeGatewayParams,
+    AddMemoGatewayParams,
+    ListMemosByNodeGatewayParams,
+    DeleteMemosByNodeGatewayParams
 } from '@domain/gateways/iDatabaseGateway.ts';
 
 export class MongoDBGateway implements IDatabaseGateway {
@@ -163,5 +167,28 @@ export class MongoDBGateway implements IDatabaseGateway {
         return collection
             .find({ graph_id: params.graphId, target_id: params.targetId })
             .toArray();
+    }
+
+    async addMemo (params: AddMemoGatewayParams): Promise<void> {
+        const collection = this.client.db().collection<MemoDocument>('memos');
+
+        await collection.insertOne(params.memo);
+    }
+
+    async listMemosByNode (params: ListMemosByNodeGatewayParams): Promise<MemoDocument[]> {
+        const collection = this.client.db().collection<MemoDocument>('memos');
+
+        return collection
+            .find({ node_id: params.nodeId })
+            .sort({ created_at: 1 })
+            .toArray();
+    }
+
+    async deleteMemosByNode (params: DeleteMemosByNodeGatewayParams): Promise<boolean> {
+        const collection = this.client.db().collection<MemoDocument>('memos');
+
+        const result = await collection.deleteMany({ node_id: params.nodeId });
+
+        return result.deletedCount > 0;
     }
 }

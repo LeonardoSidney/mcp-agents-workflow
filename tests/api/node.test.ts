@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { NodeWithEdges } from '@domain/entities/node.ts';
+import type { NodeWithMemos } from '@domain/entities/node.ts';
 import { mcpTestHarness } from './mcpHarness.ts';
 
 type SearchHit = {
@@ -10,7 +10,7 @@ type SearchHit = {
     score: number;
 };
 
-const { addEdge, addNode, addProject, callTool, edgesCollection, fetchNode, nodesCollection, textOf } = mcpTestHarness();
+const { addEdge, addMemo, addNode, addProject, callTool, edgesCollection, fetchNode, nodesCollection, textOf } = mcpTestHarness();
 
 describe('MCP server - node lifecycle', () => {
     test('adds a node linked to an existing graph', async () => {
@@ -42,7 +42,7 @@ describe('MCP server - node lifecycle', () => {
 
         expect(result.isError).toBeFalsy();
         const jsonStart = textOf(result).indexOf('{');
-        const updated = JSON.parse(textOf(result).slice(jsonStart)) as NodeWithEdges;
+        const updated = JSON.parse(textOf(result).slice(jsonStart)) as NodeWithMemos;
         expect(updated).toMatchObject({
             id: node.id,
             graphId: graph.id,
@@ -74,7 +74,7 @@ describe('MCP server - node lifecycle', () => {
         const fetched = await fetchNode(task.id);
         expect(fetched.isError).toBeFalsy();
 
-        const stored = JSON.parse(textOf(fetched)) as NodeWithEdges;
+        const stored = JSON.parse(textOf(fetched)) as NodeWithMemos;
         expect(stored.edges).toHaveLength(1);
         expect(stored.edges[0]).toMatchObject({ id: edge.id, type: 'PART_OF', targetId: goal.id });
     });
@@ -143,7 +143,7 @@ describe('MCP server - node lifecycle', () => {
         const fetched = await fetchNode(task.id);
         expect(fetched.isError).toBeFalsy();
 
-        const stored = JSON.parse(textOf(fetched)) as NodeWithEdges;
+        const stored = JSON.parse(textOf(fetched)) as NodeWithMemos;
         expect(stored.edges).toHaveLength(1);
         expect(stored.edges[0]).toMatchObject({ id: edge.id, type: 'PART_OF', targetId: goal.id });
     });
@@ -203,7 +203,7 @@ describe('MCP server - node lifecycle', () => {
 
         expect(result.isError).toBeFalsy();
 
-        const fetched = JSON.parse(textOf(result)) as NodeWithEdges;
+        const fetched = JSON.parse(textOf(result)) as NodeWithMemos;
         expect(fetched).toMatchObject({
             id: node.id,
             graphId: graph.id,
@@ -238,7 +238,7 @@ describe('MCP server - node lifecycle', () => {
         const fetched = await fetchNode(task.id);
         expect(fetched.isError).toBeFalsy();
 
-        const stored = JSON.parse(textOf(fetched)) as NodeWithEdges;
+        const stored = JSON.parse(textOf(fetched)) as NodeWithMemos;
         expect(stored.edges).toHaveLength(1);
         expect(stored.edges[0]).toMatchObject({
             type: 'CONSTRAINED_BY',
@@ -461,6 +461,21 @@ describe('MCP server - node lifecycle', () => {
         const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
         expect(results).toHaveLength(1);
         expect(results[0]?.memoryScore).toEqual(0);
+    });
+
+    test('indexes the memos of a node in search when no edge carries the match', async () => {
+        const graph = await addProject('Memo Search Project', 'Project used to search node memos', 'waiting_goal');
+        const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
+        await addNode(graph.id, 'TASK', 'Another task', 'Still nothing to match');
+        await addMemo(node.id, 'user', 'The reimbursement rule applies to this kind of task');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'reimbursement rule' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([node.id]);
+        expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 0 });
+        expect(results[0]?.memoryScore).toBeGreaterThan(0);
     });
 
     test('ranks a strong memory match above a weak title match', async () => {

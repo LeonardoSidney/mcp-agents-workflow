@@ -1,5 +1,5 @@
 import type { GraphSearchNodesControllerParams, GraphSearchNodesControllerResponse, IGraphSearchNodesController } from '@domain/controllers/iGraphSearchNodesController.ts';
-import { toNodeSummaryWithEdges } from '@domain/entities/node.ts';
+import { toNodeSummaryWithMemos } from '@domain/entities/node.ts';
 import type { ILogger } from '@domain/logger.ts';
 import type { IGraphSearchNodesUseCase } from '@domain/use-cases/iGraphSearchNodesUseCase.ts';
 
@@ -30,7 +30,7 @@ export class GraphSearchNodesController implements IGraphSearchNodesController {
         }
 
         const results = response.results.map(result => ({
-            node: toNodeSummaryWithEdges(result.node),
+            node: toNodeSummaryWithMemos(result.node),
             titleScore: this.round(result.titleScore),
             descriptionScore: this.round(result.descriptionScore),
             memoryScore: this.round(result.memoryScore),

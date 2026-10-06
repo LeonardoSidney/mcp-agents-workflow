@@ -17,6 +17,9 @@ export interface IDatabaseGateway {
     deleteEdge (params: DeleteEdgeGatewayParams): Promise<boolean>;
     listEdgesBySource (params: ListEdgesBySourceGatewayParams): Promise<EdgeDocument[]>;
     listEdgesByTarget (params: ListEdgesByTargetGatewayParams): Promise<EdgeDocument[]>;
+    addMemo (params: AddMemoGatewayParams): Promise<void>;
+    listMemosByNode (params: ListMemosByNodeGatewayParams): Promise<MemoDocument[]>;
+    deleteMemosByNode (params: DeleteMemosByNodeGatewayParams): Promise<boolean>;
 }
 
 export type AddGraphGatewayParams = {
@@ -108,6 +111,26 @@ export type ListEdgeGatewayParams = {
 export type DeleteEdgeGatewayParams = {
     graphId: string;
     id: string;
+};
+
+export type MemoDocument = {
+    id: string;
+    node_id: string;
+    author: string;
+    text: string;
+    created_at: Date;
+};
+
+export type AddMemoGatewayParams = {
+    memo: MemoDocument;
+};
+
+export type ListMemosByNodeGatewayParams = {
+    nodeId: string;
+};
+
+export type DeleteMemosByNodeGatewayParams = {
+    nodeId: string;
 };
 
 
