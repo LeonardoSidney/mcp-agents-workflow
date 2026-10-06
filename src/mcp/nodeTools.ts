@@ -43,7 +43,7 @@ export function registerNodeTools (server: McpServer): void {
             description: 'Append a memo to an existing node: one entry of the discussion recorded on the node, with the author declared by the caller. Memos are append-only and survive the node being completed, and are exposed on the node by graph-get-node, graph-get-nodes and graph-search-nodes',
             inputSchema: z.object({
                 id: z.uuid().describe('Node id to append the memo to (uuidv4)'),
-                author: z.enum(MEMO_AUTHOR_VALUES).describe('Who recorded this memo: the agent, the user, or the system'),
+                author: z.enum(MEMO_AUTHOR_VALUES).describe('Speaker of this memo, not the one typing it: "agent" for the agent, "user" for a rule or clarification provided by the user, "system" for the orchestration layer'),
                 text: z.string().min(1).describe('Memo text: what was discussed, the difficulty met, or the rule that applies')
             })
         },

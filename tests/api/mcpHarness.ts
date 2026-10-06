@@ -1,4 +1,4 @@
-import { Client, InMemoryTransport, type CallToolResult } from '@modelcontextprotocol/client';
+import { Client, InMemoryTransport, type CallToolResult, type Tool } from '@modelcontextprotocol/client';
 import { MongoClient, type Collection } from 'mongodb';
 import type { McpServer } from '@modelcontextprotocol/server';
 import type { NodeSummary } from '@domain/entities/node.ts';
@@ -74,6 +74,23 @@ export function mcpTestHarness () {
         return result.content
             .map(block => (block.type === 'text' ? block.text : ''))
             .join('');
+    }
+
+    function instructions (): string {
+        const advertised = client?.getInstructions();
+        if (!advertised) {
+            throw new Error('MCP client is not connected or the server sent no instructions');
+        }
+
+        return advertised;
+    }
+
+    async function listTools (): Promise<{ tools: Tool[]; }> {
+        if (!client) {
+            throw new Error('MCP client is not connected');
+        }
+
+        return client.listTools();
     }
 
     async function addProject (name: string, description: string, status?: string): Promise<Project> {
@@ -178,6 +195,8 @@ export function mcpTestHarness () {
     return {
         callTool,
         textOf,
+        instructions,
+        listTools,
         addProject,
         addNode,
         addEdge,
