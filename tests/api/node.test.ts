@@ -6,6 +6,7 @@ type SearchHit = {
     node: { id: string; };
     titleScore: number;
     descriptionScore: number;
+    memoryScore: number;
     score: number;
 };
 
@@ -417,9 +418,63 @@ describe('MCP server - node lifecycle', () => {
 
         const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
         expect(results.map(hit => hit.node.id)).toEqual([exact.id, repeated.id, reversed.id]);
-        expect(results[0]).toMatchObject({ titleScore: 1, descriptionScore: 0, score: 0.5 });
-        expect(results[1]).toMatchObject({ titleScore: 0.8, descriptionScore: 0, score: 0.4 });
-        expect(results[2]).toMatchObject({ titleScore: 0.5, descriptionScore: 0, score: 0.25 });
+        expect(results[0]).toMatchObject({ titleScore: 1, descriptionScore: 0, memoryScore: 0, score: 0.33 });
+        expect(results[1]).toMatchObject({ titleScore: 0.8, descriptionScore: 0, memoryScore: 0, score: 0.27 });
+        expect(results[2]).toMatchObject({ titleScore: 0.5, descriptionScore: 0, memoryScore: 0, score: 0.17 });
+    });
+
+    test('indexes the memory of a node outgoing edges in search', async () => {
+        const graph = await addProject('Memory Search Project', 'Project used to search edge memories', 'waiting_goal');
+        const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
+        const target = await addNode(graph.id, 'OBSERVATION', 'Other observation', 'No match in this one');
+        await addEdge(graph.id, node.id, target.id, 'CONSTRAINED_BY', 'Constrained by the audit deadline');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'audit deadline' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([node.id]);
+        expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 0 });
+        expect(results[0]?.memoryScore).toBeGreaterThan(0);
+    });
+
+    test('does not index incoming edge memory on the target node', async () => {
+        const graph = await addProject('Incoming Memory Project', 'Project used to search incoming edge memories', 'waiting_goal');
+        const source = await addNode(graph.id, 'TASK', 'Source task', 'No match on the source');
+        const target = await addNode(graph.id, 'OBSERVATION', 'Target observation', 'No match on the target');
+        await addEdge(graph.id, source.id, target.id, 'DEPENDS_ON', 'Blocked by the database migration');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'database migration' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([source.id]);
+    });
+
+    test('keeps memoryScore at zero for nodes without edges', async () => {
+        const graph = await addProject('No Memory Search Project', 'Project used to search nodes without memories', 'waiting_goal');
+        await addNode(graph.id, 'TASK', 'Invoice report', 'Nothing around it');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'invoice report' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results).toHaveLength(1);
+        expect(results[0]?.memoryScore).toEqual(0);
+    });
+
+    test('ranks a strong memory match above a weak title match', async () => {
+        const graph = await addProject('Memory Rank Project', 'Project used to rank memory matches', 'waiting_goal');
+        const weakTitle = await addNode(graph.id, 'TASK', 'Invoice report export', 'No other words here');
+        const strongMemory = await addNode(graph.id, 'TASK', 'Invoice report', 'Still not matching words');
+        const target = await addNode(graph.id, 'OBSERVATION', 'Plain target node', 'No memory here at all');
+        await addEdge(graph.id, strongMemory.id, target.id, 'SOLVED_BY', 'Invoice report export was validated by finance');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'invoice report export' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([strongMemory.id, weakTitle.id]);
     });
 
     test('matches the description when the title does not contain the query', async () => {

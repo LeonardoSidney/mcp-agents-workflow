@@ -87,10 +87,10 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-search-nodes',
         {
-            description: 'Search the nodes of a graph (project) by text across title and description, ranked by similarity. Use short meaningful tokens without articles or connectives from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); connectives match almost everything, so keep the query short or cap results with a limit.',
+            description: 'Search the nodes of a graph (project) by text across title, description, and memories recorded on the node outgoing edges, ranked by similarity. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectives from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); connectives match almost everything, so keep the query short or cap results with a limit.',
             inputSchema: z.object({
                 graphId: z.uuid().describe('Graph (project) id whose nodes should be searched (uuidv4)'),
-                text: z.string().min(1).describe('Text to match across title and description, as short meaningful tokens'),
+                text: z.string().min(1).describe('Text to match across title, description, and memories (outgoing edge descriptions), as short meaningful tokens'),
                 limit: z.number().int().positive().optional().describe('Maximum number of results to return (omit for no limit)')
             })
         },

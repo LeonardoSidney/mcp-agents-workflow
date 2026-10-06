@@ -8,6 +8,7 @@ export type NodeSearchSummaryResult = {
     node: NodeSummaryWithEdges;
     titleScore: number;
     descriptionScore: number;
+    memoryScore: number;
     score: number;
 };
 

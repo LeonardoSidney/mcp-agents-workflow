@@ -33,6 +33,7 @@ export class GraphSearchNodesController implements IGraphSearchNodesController {
             node: toNodeSummaryWithEdges(result.node),
             titleScore: this.round(result.titleScore),
             descriptionScore: this.round(result.descriptionScore),
+            memoryScore: this.round(result.memoryScore),
             score: this.round(result.score)
         }));
 

@@ -15,8 +15,13 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
         for (const node of params.nodes) {
             const titleScore = this.fieldScore(queryTokens, node.title);
             const descriptionScore = this.fieldScore(queryTokens, node.description);
+            const memoryText = node.edges
+                .map(edge => edge.description)
+                .filter((description): description is string => Boolean(description))
+                .join(' ');
+            const memoryScore = this.fieldScore(queryTokens, memoryText);
 
-            if (titleScore === 0 && descriptionScore === 0) {
+            if (titleScore === 0 && descriptionScore === 0 && memoryScore === 0) {
                 continue;
             }
 
@@ -24,7 +29,8 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
                 node,
                 titleScore,
                 descriptionScore,
-                score: (titleScore + descriptionScore) / 2
+                memoryScore,
+                score: (titleScore + descriptionScore + memoryScore) / 3
             });
         }
 
@@ -81,11 +87,12 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
                 if (aToken === bToken) {
                     const diagonal = previousRow[j - 1] ?? 0;
                     currentRow[j] = diagonal + 1;
-                } else {
-                    const up = previousRow[j] ?? 0;
-                    const left = currentRow[j - 1] ?? 0;
-                    currentRow[j] = Math.max(up, left);
+                    continue;
                 }
+
+                const up = previousRow[j] ?? 0;
+                const left = currentRow[j - 1] ?? 0;
+                currentRow[j] = Math.max(up, left);
             }
         }
 
