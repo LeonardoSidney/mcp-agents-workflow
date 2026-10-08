@@ -67,7 +67,7 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-get-nodes',
         {
-            description: 'List the nodes of a graph (project), ordered by the most recently updated first, optionally filtered by type and status and capped by a limit',
+            description: 'List the nodes of a graph (project), ordered by the most recently updated first, optionally filtered by type and status and capped by a limit. Returns node and outgoing edge descriptions only - never memo text; read the discussion of a node with graph-get-node',
             inputSchema: z.object({
                 graphId: z.uuid().describe('Graph (project) id whose nodes should be listed (uuidv4)'),
                 type: z.enum(NODE_TYPE_VALUES).optional().describe('Only return nodes of this type (omit for all types)'),
@@ -116,7 +116,7 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-search-nodes',
         {
-            description: 'Search the nodes of a graph (project) by text across title, description, and memories recorded on the node outgoing edges and memos appended to the node, ranked by similarity. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); connectivities match almost everything, so keep the query short or cap the result count with limit.',
+            description: 'Search the nodes of a graph (project) by text across title, description, and memories recorded on the node outgoing edges and memos appended to the node, ranked by similarity. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); connectivities match almost everything, so keep the query short or cap the result count with limit. Results carry descriptions only, never memo text: a high memoryScore means the match lives in the discussion - fetch the node with graph-get-node to read it.',
             inputSchema: z.object({
                 graphId: z.uuid().describe('Graph (project) id whose nodes should be searched (uuidv4)'),
                 text: z.string().min(1).describe('Text to match across title, description, and memories (outgoing edge descriptions), as short meaningful tokens'),

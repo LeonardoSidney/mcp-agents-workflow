@@ -1,11 +1,12 @@
 import type { NodeStatus } from '@domain/constants/node-status.ts';
 import type { NodeType } from '@domain/constants/node-types.ts';
-import type { Node, NodeWithMemos } from '@domain/entities/node.ts';
+import type { Node, NodeWithEdges, NodeWithMemos } from '@domain/entities/node.ts';
 
 export interface INodeRepository {
     addNode (params: AddNodeRepositoryParams): Promise<void>;
     getNode (params: GetNodeRepositoryParams): Promise<NodeWithMemos | null>;
-    getNodes (params: GetNodesRepositoryParams): Promise<NodeWithMemos[]>;
+    getNodes (params: GetNodesRepositoryParams): Promise<NodeWithEdges[]>;
+    getNodesWithMemos (params: GetNodesRepositoryParams): Promise<NodeWithMemos[]>;
     updateNode (params: UpdateNodeRepositoryParams): Promise<boolean>;
     deleteNode (params: DeleteNodeRepositoryParams): Promise<boolean>;
     listAttachedEdgeIds (params: ListAttachedEdgeIdsRepositoryParams): Promise<string[]>;

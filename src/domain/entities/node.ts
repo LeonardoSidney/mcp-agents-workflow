@@ -15,14 +15,57 @@ export type Node = {
     updatedAt: Date;
 };
 
-export type NodeWithMemos = Node & {
+export type NodeWithMemos = {
+    id: string;
+    graphId: string;
+    type: NodeType;
+    status: NodeStatus;
+    title: string;
+    description: string;
+    createdAt: Date;
+    updatedAt: Date;
     edges: EdgeReference[];
     memos: Memo[];
 };
 
-export type NodeSummary = Pick<Node, 'id' | 'graphId' | 'type' | 'status' | 'title' | 'description'>;
+export type NodeWithEdges = {
+    id: string;
+    graphId: string;
+    type: NodeType;
+    status: NodeStatus;
+    title: string;
+    description: string;
+    createdAt: Date;
+    updatedAt: Date;
+    edges: EdgeReference[];
+};
 
-export type NodeSummaryWithMemos = NodeSummary & {
+export type NodeSummary = {
+    id: string;
+    graphId: string;
+    type: NodeType;
+    status: NodeStatus;
+    title: string;
+    description: string;
+};
+
+export type NodeSummaryWithEdges = {
+    id: string;
+    graphId: string;
+    type: NodeType;
+    status: NodeStatus;
+    title: string;
+    description: string;
+    edges: EdgeReference[];
+};
+
+export type NodeSummaryWithMemos = {
+    id: string;
+    graphId: string;
+    type: NodeType;
+    status: NodeStatus;
+    title: string;
+    description: string;
     edges: EdgeReference[];
     memos: MemoSummary[];
 };
@@ -35,6 +78,13 @@ export function toNodeSummary (node: Node): NodeSummary {
         status: node.status,
         title: node.title,
         description: node.description
+    };
+}
+
+export function toNodeSummaryWithEdges (node: NodeWithEdges): NodeSummaryWithEdges {
+    return {
+        ...toNodeSummary(node),
+        edges: node.edges
     };
 }
 

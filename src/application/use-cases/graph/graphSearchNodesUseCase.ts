@@ -47,7 +47,7 @@ export class GraphSearchNodesUseCase implements IGraphSearchNodesUseCase {
             };
         }
 
-        const nodes = await this.nodeRepository.getNodes({ graphId: params.graphId });
+        const nodes = await this.nodeRepository.getNodesWithMemos({ graphId: params.graphId });
 
         const scored = this.searchService.scoreNodes({ text: params.text, nodes });
         if (!scored.success || !scored.results) {

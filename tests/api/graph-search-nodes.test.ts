@@ -183,4 +183,18 @@ describe('MCP server - graph-search-nodes', () => {
         expect(text).not.toContain('created_at');
         expect(text).not.toContain('updated_at');
     });
+
+    test('matches a memo discussion without exposing the memo text in results', async () => {
+        const graph = await addProject('Hidden Discussion Project', 'Project used to match memos without exposing them');
+        const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
+        await addMemo(node.id, 'user', 'The confidential reimbursement clause');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'confidential reimbursement' });
+        expect(result.isError).toBeFalsy();
+        expect(textOf(result)).not.toContain('reimbursement clause');
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([node.id]);
+        expect(results[0]?.memoryScore).toBeGreaterThan(0);
+    });
 });

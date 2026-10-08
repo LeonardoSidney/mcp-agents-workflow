@@ -11,6 +11,7 @@ Before starting any task - new or continuing, no exceptions - bootstrap from the
 How to search:
 - graph-search-nodes takes a short query: 2 to 4 meaningful tokens, no articles or connectives. Matching is exact (diacritics-insensitive), not semantic: if the result is empty, retry with fewer or different tokens. Cap the result count with limit, then fetch only the node that looks relevant.
 - graph-get-node on that id is the one call that answers it: the node's outgoing edges (how the task was resolved) plus its memos (what was discussed, with the speaker).
+- Lists and search (graph-get-nodes, graph-search-nodes) return descriptions, never memo text: a high memoryScore means the match lives in the discussion, which is only read through graph-get-node.
 
 Write before finishing or moving on, whenever any of these happened:
 - You solved a non-obvious difficulty: graph-append-memo on the task, saying what failed and what worked.

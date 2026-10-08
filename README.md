@@ -88,22 +88,22 @@ Together, nodes (what), edges (how it connects / how it was resolved) and memos 
 
 The server exposes **14 tools** across three toolsets:
 
-| Tool                   | Description                                                                                                    |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `graph-add`            | Create a new project graph                                                                                     |
-| `graph-get-projects`   | List all projects in the graph store                                                                           |
-| `graph-get-project`    | Fetch a single project by id (uuidv4)                                                                          |
-| `graph-delete-project` | Delete a project by id                                                                                         |
-| `graph-add-node`       | Add a typed node to an existing project graph                                                                  |
-| `graph-get-nodes`      | List a project's nodes (filter by type/status, cap with `limit`, most recently updated first)                  |
-| `graph-get-node`       | Fetch a node by id, including its outgoing edges and memos                                                     |
-| `graph-update-node`    | Partially update a node's title, description or status                                                         |
-| `graph-delete-node`    | Delete a node (refused while edges are still attached)                                                         |
-| `graph-search-nodes`   | Exact token search (not semantic, diacritics-insensitive) across titles, descriptions, edge memories and memos |
-| `graph-append-memo`    | Append an attributed discussion entry to a node                                                                |
-| `graph-add-edge`       | Add a typed, first-class edge between two nodes, with a memory in its description                              |
-| `graph-update-edge`    | Partially update an edge's type or description                                                                 |
-| `graph-delete-edge`    | Delete an edge by id (never touches its nodes)                                                                 |
+| Tool                   | Description                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `graph-add`            | Create a new project graph                                                                                      |
+| `graph-get-projects`   | List all projects in the graph store                                                                            |
+| `graph-get-project`    | Fetch a single project by id (uuidv4)                                                                           |
+| `graph-delete-project` | Delete a project by id                                                                                          |
+| `graph-add-node`       | Add a typed node to an existing project graph                                                                   |
+| `graph-get-nodes`      | List a project's nodes (descriptions only, no memo text; filter by type/status, cap with `limit`, newest first) |
+| `graph-get-node`       | Fetch a node by id, including its outgoing edges and memos                                                      |
+| `graph-update-node`    | Partially update a node's title, description or status                                                          |
+| `graph-delete-node`    | Delete a node (refused while edges are still attached)                                                          |
+| `graph-search-nodes`   | Exact token search (not semantic, diacritics-insensitive) across titles, descriptions, edge memories and memos  |
+| `graph-append-memo`    | Append an attributed discussion entry to a node                                                                 |
+| `graph-add-edge`       | Add a typed, first-class edge between two nodes, with a memory in its description                               |
+| `graph-update-edge`    | Partially update an edge's type or description                                                                  |
+| `graph-delete-edge`    | Delete an edge by id (never touches its nodes)                                                                  |
 
 On top of the tools, the server sends rich **instructions** to the MCP client at session start: the session bootstrap (locate or create the workspace project), the read-then-write workflow, query phrasing for `graph-search-nodes`, and how to attribute memos — so even a model that has never seen the graph behaves sensibly with it.
 

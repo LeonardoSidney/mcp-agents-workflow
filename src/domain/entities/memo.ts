@@ -8,7 +8,11 @@ export type Memo = {
   createdAt: Date;
 };
 
-export type MemoSummary = Pick<Memo, 'id' | 'author' | 'text'>;
+export type MemoSummary = {
+  id: string;
+  author: MemoAuthor;
+  text: string;
+};
 
 export function toMemoSummary (memo: Memo): MemoSummary {
   return {

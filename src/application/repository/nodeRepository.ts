@@ -1,5 +1,5 @@
 import type { INodeRepository, AddNodeRepositoryParams, DeleteNodeRepositoryParams, GetNodeRepositoryParams, GetNodesRepositoryParams, ListAttachedEdgeIdsRepositoryParams, UpdateNodeRepositoryParams } from '@domain/repository/iNodeRepository.ts';
-import type { NodeWithMemos } from '@domain/entities/node.ts';
+import type { NodeWithEdges, NodeWithMemos } from '@domain/entities/node.ts';
 import type { EdgeReference } from '@domain/entities/edge.ts';
 import { toEdgeReference } from '@domain/entities/edge.ts';
 import type { Memo } from '@domain/entities/memo.ts';
@@ -38,13 +38,19 @@ export class NodeRepository implements INodeRepository {
         return { ...node, edges, memos };
     }
 
-    async getNodes (params: GetNodesRepositoryParams): Promise<NodeWithMemos[]> {
-        const documents = await this.databaseGateway.listNodes({
-            graphId: params.graphId,
-            type: params.type,
-            status: params.status,
-            limit: params.limit
-        });
+    async getNodes (params: GetNodesRepositoryParams): Promise<NodeWithEdges[]> {
+        const documents = await this.listNodeDocuments(params);
+
+        return Promise.all(documents.map(async document => {
+            const node = NodeDTO.to_domain(document);
+            const edges = await this.edgesBySource(node.graphId, node.id);
+
+            return { ...node, edges };
+        }));
+    }
+
+    async getNodesWithMemos (params: GetNodesRepositoryParams): Promise<NodeWithMemos[]> {
+        const documents = await this.listNodeDocuments(params);
 
         return Promise.all(documents.map(async document => {
             const node = NodeDTO.to_domain(document);
@@ -86,5 +92,14 @@ export class NodeRepository implements INodeRepository {
         const documents = await this.databaseGateway.listMemosByNode({ nodeId });
 
         return documents.map(document => MemoDTO.to_domain(document));
+    }
+
+    private async listNodeDocuments (params: GetNodesRepositoryParams) {
+        return this.databaseGateway.listNodes({
+            graphId: params.graphId,
+            type: params.type,
+            status: params.status,
+            limit: params.limit
+        });
     }
 }

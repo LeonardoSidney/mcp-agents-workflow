@@ -1,6 +1,6 @@
 import { mcpTestHarness } from './mcpHarness.ts';
 
-const { addNode, addProject, callTool, textOf } = mcpTestHarness();
+const { addMemo, addNode, addProject, callTool, textOf } = mcpTestHarness();
 
 describe('MCP server - graph-get-nodes', () => {
     test('lists the nodes of one graph sorted by the most recent first', async () => {
@@ -114,5 +114,18 @@ describe('MCP server - graph-get-nodes', () => {
 
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('Invalid arguments');
+    });
+
+    test('keeps memo discussions out of the node list', async () => {
+        const graph = await addProject('Memo List Project', 'Project used to keep discussions out of the list');
+        const node = await addNode(graph.id, 'TASK', 'Memoed task', 'Task with a recorded discussion');
+        await addMemo(node.id, 'user', 'The clause that must never appear in a node list');
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id });
+        expect(result.isError).toBeFalsy();
+        expect(textOf(result)).not.toContain('must never appear');
+
+        const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; memos?: unknown; }[];
+        expect(nodes[0]?.memos).toBeUndefined();
     });
 });
