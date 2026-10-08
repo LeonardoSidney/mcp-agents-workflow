@@ -2,6 +2,7 @@
   "name": "mcp-agents-workflow",
   "version": "1.0.0",
   "description": "",
+  "license": "AGPL-3.0",
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
