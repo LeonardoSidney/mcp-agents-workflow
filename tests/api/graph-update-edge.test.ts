@@ -6,7 +6,7 @@ const { addEdge, addNode, addProject, callTool, edgesCollection, fetchNode, text
 
 describe('MCP server - graph-update-edge', () => {
     test('updates only the edge description, keeping the type', async () => {
-        const graph = await addProject('Description Update Project', 'Project used to update an edge description', 'waiting_goal');
+        const graph = await addProject('Description Update Project', 'Project used to update an edge description');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task that owns the edge');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal pointed by the edge');
         const edge = await addEdge(graph.id, source.id, target.id, 'PART_OF', 'Original memory');
@@ -23,7 +23,7 @@ describe('MCP server - graph-update-edge', () => {
     });
 
     test('updates only the edge type, keeping the description', async () => {
-        const graph = await addProject('Type Update Project', 'Project used to update an edge type', 'waiting_goal');
+        const graph = await addProject('Type Update Project', 'Project used to update an edge type');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task that owns the edge');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal pointed by the edge');
         const edge = await addEdge(graph.id, source.id, target.id, 'PART_OF', 'Memory that must survive');
@@ -50,7 +50,7 @@ describe('MCP server - graph-update-edge', () => {
     });
 
     test('refuses to update an edge without any field to change', async () => {
-        const graph = await addProject('Empty Edge Update Project', 'Project used for an empty edge update', 'waiting_goal');
+        const graph = await addProject('Empty Edge Update Project', 'Project used for an empty edge update');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task that owns the edge');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal pointed by the edge');
         const edge = await addEdge(graph.id, source.id, target.id, 'PART_OF');
@@ -62,7 +62,7 @@ describe('MCP server - graph-update-edge', () => {
     });
 
     test('refuses to update an edge with an invalid type', async () => {
-        const graph = await addProject('Invalid Edge Type Project', 'Project used for an invalid edge type', 'waiting_goal');
+        const graph = await addProject('Invalid Edge Type Project', 'Project used for an invalid edge type');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task that owns the edge');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal pointed by the edge');
         const edge = await addEdge(graph.id, source.id, target.id, 'PART_OF');
@@ -74,7 +74,7 @@ describe('MCP server - graph-update-edge', () => {
     });
 
     test('updating an edge does not touch the node order or the edge collection', async () => {
-        const graph = await addProject('Edge Touch Project', 'Project used to verify edge updates stay away from nodes', 'waiting_goal');
+        const graph = await addProject('Edge Touch Project', 'Project used to verify edge updates stay away from nodes');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task that owns the edge');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal pointed by the edge');
         const edge = await addEdge(graph.id, source.id, target.id, 'PART_OF');

@@ -93,8 +93,8 @@ export function mcpTestHarness () {
         return client.listTools();
     }
 
-    async function addProject (name: string, description: string, status?: string): Promise<Project> {
-        const result = await callTool('graph-add', { name, description, ...(status ? { status } : {}) });
+    async function addProject (name: string, description: string): Promise<Project> {
+        const result = await callTool('graph-add', { name, description });
 
         if (result.isError) {
             const message = textOf(result);

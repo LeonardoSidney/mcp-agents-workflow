@@ -4,8 +4,8 @@ const { addNode, addProject, callTool, textOf } = mcpTestHarness();
 
 describe('MCP server - graph-get-nodes', () => {
     test('lists the nodes of one graph sorted by the most recent first', async () => {
-        const graph = await addProject('Panorama Project', 'Project used to list nodes', 'waiting_goal');
-        const otherGraph = await addProject('Other Graph', 'Graph that must not leak nodes', 'waiting_goal');
+        const graph = await addProject('Panorama Project', 'Project used to list nodes');
+        const otherGraph = await addProject('Other Graph', 'Graph that must not leak nodes');
 
         await addNode(otherGraph.id, 'GOAL', 'Other goal', 'Goal of the other graph');
         await addNode(graph.id, 'GOAL', 'First goal', 'First goal of the panorama');
@@ -30,7 +30,7 @@ describe('MCP server - graph-get-nodes', () => {
     test('updating a node bumps it to the most recent position', async () => {
         const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-        const graph = await addProject('Bump Order Project', 'Project used to test bump ordering', 'waiting_goal');
+        const graph = await addProject('Bump Order Project', 'Project used to test bump ordering');
         const goal = await addNode(graph.id, 'GOAL', 'Linked goal', 'Goal linked from the task');
         const task = await addNode(graph.id, 'TASK', 'Linked task', 'Task linked to the goal');
         await sleep(5);
@@ -53,7 +53,7 @@ describe('MCP server - graph-get-nodes', () => {
     });
 
     test('filters nodes by type and status', async () => {
-        const graph = await addProject('Filter Project', 'Project used to filter nodes', 'waiting_goal');
+        const graph = await addProject('Filter Project', 'Project used to filter nodes');
         const pendingTask = await addNode(graph.id, 'TASK', 'Pending task', 'Task still pending');
         const runningTask = await callTool('graph-add-node', {
             graphId: graph.id,
@@ -80,7 +80,7 @@ describe('MCP server - graph-get-nodes', () => {
     test('caps the node list with a limit, keeping the most recent first', async () => {
         const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-        const graph = await addProject('Limit Project', 'Project used to limit nodes', 'waiting_goal');
+        const graph = await addProject('Limit Project', 'Project used to limit nodes');
         await addNode(graph.id, 'TASK', 'First task', 'Oldest node');
         await sleep(5);
         const second = await addNode(graph.id, 'TASK', 'Second task', 'Middle node');
@@ -96,7 +96,7 @@ describe('MCP server - graph-get-nodes', () => {
     });
 
     test('returns an empty list when no node matches the filters', async () => {
-        const graph = await addProject('Empty Filter Project', 'Project with a single node', 'waiting_goal');
+        const graph = await addProject('Empty Filter Project', 'Project with a single node');
         await addNode(graph.id, 'TASK', 'Only task', 'The only node');
 
         const result = await callTool('graph-get-nodes', { graphId: graph.id, type: 'GOAL' });
@@ -107,7 +107,7 @@ describe('MCP server - graph-get-nodes', () => {
     });
 
     test('refuses a node list with an invalid type filter', async () => {
-        const graph = await addProject('Invalid Filter Project', 'Project used for an invalid filter', 'waiting_goal');
+        const graph = await addProject('Invalid Filter Project', 'Project used for an invalid filter');
         await addNode(graph.id, 'TASK', 'Some task', 'Some task description');
 
         const result = await callTool('graph-get-nodes', { graphId: graph.id, type: 'NOT_A_TYPE' });

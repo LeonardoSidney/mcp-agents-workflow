@@ -5,7 +5,7 @@ const { addMemo, addNode, addProject, callTool, fetchNode, memosCollection, text
 
 describe('MCP server - graph-append-memo', () => {
     test('appends a memo and stores it in the memos collection linked by node_id', async () => {
-        const graph = await addProject('Memo Project', 'Project used to append memos', 'waiting_goal');
+        const graph = await addProject('Memo Project', 'Project used to append memos');
         const node = await addNode(graph.id, 'TASK', 'Payment task', 'Compute the payment amount');
 
         const memo = await addMemo(node.id, 'agent', 'Stuck: the discount rule is not applied when the total is negative');
@@ -25,7 +25,7 @@ describe('MCP server - graph-append-memo', () => {
     });
 
     test('appends memos to a completed node and they survive the completion', async () => {
-        const graph = await addProject('Memo Completed Project', 'Project used to memo a completed node', 'waiting_goal');
+        const graph = await addProject('Memo Completed Project', 'Project used to memo a completed node');
         const node = await addNode(graph.id, 'TASK', 'Done task', 'Task that will be completed before the memo');
 
         const updated = await callTool('graph-update-node', { id: node.id, status: 'completed' });
@@ -58,7 +58,7 @@ describe('MCP server - graph-append-memo', () => {
     });
 
     test('refuses to append a memo with an empty text', async () => {
-        const graph = await addProject('Memo Empty Text Project', 'Project used to reject an empty memo', 'waiting_goal');
+        const graph = await addProject('Memo Empty Text Project', 'Project used to reject an empty memo');
         const node = await addNode(graph.id, 'TASK', 'Memoed task', 'Task used to reject an empty memo');
 
         const result = await callTool('graph-append-memo', { id: node.id, author: 'agent', text: '' });

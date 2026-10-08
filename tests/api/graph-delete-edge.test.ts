@@ -5,7 +5,7 @@ const { addEdge, addNode, addProject, callTool, edgesCollection, fetchNode, node
 
 describe('MCP server - graph-delete-edge', () => {
     test('deletes an edge by id', async () => {
-        const graph = await addProject('Edge Delete Project', 'Project used to delete an edge', 'waiting_goal');
+        const graph = await addProject('Edge Delete Project', 'Project used to delete an edge');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task that owned the edge');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal pointed by the edge');
         const edge = await addEdge(graph.id, source.id, target.id, 'PART_OF');

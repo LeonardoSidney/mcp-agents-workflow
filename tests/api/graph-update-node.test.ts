@@ -5,7 +5,7 @@ const { addEdge, addMemo, addNode, addProject, callTool, fetchNode, nodesCollect
 
 describe('MCP server - graph-update-node', () => {
     test('updates a node status and description, leaving other fields untouched', async () => {
-        const graph = await addProject('Update Project', 'Project used to update a node', 'waiting_goal');
+        const graph = await addProject('Update Project', 'Project used to update a node');
         const node = await addNode(graph.id, 'TASK', 'Build the server', 'Build the MCP server');
 
         const result = await callTool('graph-update-node', {
@@ -37,7 +37,7 @@ describe('MCP server - graph-update-node', () => {
     });
 
     test('updating a node never touches its edges', async () => {
-        const graph = await addProject('Edge-Touch Project', 'Project used to verify node updates stay away from edges', 'waiting_goal');
+        const graph = await addProject('Edge-Touch Project', 'Project used to verify node updates stay away from edges');
         const goal = await addNode(graph.id, 'GOAL', 'Main goal', 'Main goal of the project');
         const task = await addNode(graph.id, 'TASK', 'Dependent task', 'Task linked to the goal');
         const edge = await addEdge(graph.id, task.id, goal.id, 'PART_OF');
@@ -54,7 +54,7 @@ describe('MCP server - graph-update-node', () => {
     });
 
     test('updating a node never touches its memos', async () => {
-        const graph = await addProject('Memo Untouched Project', 'Project used to verify node updates stay away from memos', 'waiting_goal');
+        const graph = await addProject('Memo Untouched Project', 'Project used to verify node updates stay away from memos');
         const node = await addNode(graph.id, 'TASK', 'Memoed and updated task', 'Task updated after a memo was recorded');
         await addMemo(node.id, 'agent', 'The first recorded thought on this task');
 
@@ -83,7 +83,7 @@ describe('MCP server - graph-update-node', () => {
     });
 
     test('refuses to update a node without any field to change', async () => {
-        const graph = await addProject('Empty Update Project', 'Project used for an empty update', 'waiting_goal');
+        const graph = await addProject('Empty Update Project', 'Project used for an empty update');
         const node = await addNode(graph.id, 'GOAL', 'Goal', 'A goal');
 
         const result = await callTool('graph-update-node', { id: node.id });

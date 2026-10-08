@@ -13,7 +13,7 @@ const { addEdge, addMemo, addNode, addProject, callTool, textOf } = mcpTestHarne
 
 describe('MCP server - graph-search-nodes', () => {
     test('ranks search results by similarity, penalizing reversed and repeated tokens', async () => {
-        const graph = await addProject('Search Project', 'Project used to rank search results', 'waiting_goal');
+        const graph = await addProject('Search Project', 'Project used to rank search results');
         const exact = await addNode(graph.id, 'TASK', 'Carro, porta', 'Neutral description a');
         const repeated = await addNode(graph.id, 'TASK', 'Carro, Carro, porta', 'Neutral description b');
         const reversed = await addNode(graph.id, 'TASK', 'Porta, carro', 'Neutral description c');
@@ -29,7 +29,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('indexes the memory of a node outgoing edges in search', async () => {
-        const graph = await addProject('Memory Search Project', 'Project used to search edge memories', 'waiting_goal');
+        const graph = await addProject('Memory Search Project', 'Project used to search edge memories');
         const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
         const target = await addNode(graph.id, 'OBSERVATION', 'Other observation', 'No match in this one');
         await addEdge(graph.id, node.id, target.id, 'CONSTRAINED_BY', 'Constrained by the audit deadline');
@@ -44,7 +44,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('does not index incoming edge memory on the target node', async () => {
-        const graph = await addProject('Incoming Memory Project', 'Project used to search incoming edge memories', 'waiting_goal');
+        const graph = await addProject('Incoming Memory Project', 'Project used to search incoming edge memories');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'No match on the source');
         const target = await addNode(graph.id, 'OBSERVATION', 'Target observation', 'No match on the target');
         await addEdge(graph.id, source.id, target.id, 'DEPENDS_ON', 'Blocked by the database migration');
@@ -57,7 +57,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('keeps memoryScore at zero for nodes without edges', async () => {
-        const graph = await addProject('No Memory Search Project', 'Project used to search nodes without memories', 'waiting_goal');
+        const graph = await addProject('No Memory Search Project', 'Project used to search nodes without memories');
         await addNode(graph.id, 'TASK', 'Invoice report', 'Nothing around it');
 
         const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'invoice report' });
@@ -69,7 +69,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('indexes the memos of a node in search when no edge carries the match', async () => {
-        const graph = await addProject('Memo Search Project', 'Project used to search node memos', 'waiting_goal');
+        const graph = await addProject('Memo Search Project', 'Project used to search node memos');
         const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
         await addNode(graph.id, 'TASK', 'Another task', 'Still nothing to match');
         await addMemo(node.id, 'user', 'The reimbursement rule applies to this kind of task');
@@ -84,7 +84,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('ranks a strong memory match above a weak title match', async () => {
-        const graph = await addProject('Memory Rank Project', 'Project used to rank memory matches', 'waiting_goal');
+        const graph = await addProject('Memory Rank Project', 'Project used to rank memory matches');
         const weakTitle = await addNode(graph.id, 'TASK', 'Invoice report export', 'No other words here');
         const strongMemory = await addNode(graph.id, 'TASK', 'Invoice report', 'Still not matching words');
         const target = await addNode(graph.id, 'OBSERVATION', 'Plain target node', 'No memory here at all');
@@ -98,7 +98,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('matches the description when the title does not contain the query', async () => {
-        const graph = await addProject('Description Search Project', 'Project used to search descriptions', 'waiting_goal');
+        const graph = await addProject('Description Search Project', 'Project used to search descriptions');
         const matched = await addNode(graph.id, 'FACT', 'Unrelated fact', 'A fact that matches the query in its description');
         await addNode(graph.id, 'OBSERVATION', 'Other observation', 'Another observation with nothing to match');
 
@@ -113,7 +113,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('ignores diacritics on the query when matching a node', async () => {
-        const graph = await addProject('Accent Search Project', 'Project used to search with accents', 'waiting_goal');
+        const graph = await addProject('Accent Search Project', 'Project used to search with accents');
         const node = await addNode(graph.id, 'TASK', 'Meal benefit', 'Pagamento do vale refeicao mensal');
 
         const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'refeição' });
@@ -127,7 +127,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('caps the search results with a limit', async () => {
-        const graph = await addProject('Search Limit Project', 'Project used to limit search results', 'waiting_goal');
+        const graph = await addProject('Search Limit Project', 'Project used to limit search results');
         const exact = await addNode(graph.id, 'TASK', 'Carro, porta', 'Description used for the limit check');
         const repeated = await addNode(graph.id, 'TASK', 'Carro, Carro, porta', 'Another description used for the limit check');
         await addNode(graph.id, 'TASK', 'Porta, carro', 'Third description used for the limit check');
@@ -142,7 +142,7 @@ describe('MCP server - graph-search-nodes', () => {
     test('breaks search ties by the most recently created node', async () => {
         const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-        const graph = await addProject('Search Tie Project', 'Project used to break search ties', 'waiting_goal');
+        const graph = await addProject('Search Tie Project', 'Project used to break search ties');
         const first = await addNode(graph.id, 'TASK', 'Tie task', 'Same description for both nodes');
         await sleep(5);
         const second = await addNode(graph.id, 'TASK', 'Tie task', 'Same description for both nodes');
@@ -155,7 +155,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('refuses search text that is empty after normalization', async () => {
-        const graph = await addProject('Empty Search Project', 'Project used to reject an empty search', 'waiting_goal');
+        const graph = await addProject('Empty Search Project', 'Project used to reject an empty search');
 
         const result = await callTool('graph-search-nodes', { graphId: graph.id, text: '##' });
 
@@ -171,7 +171,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('keeps node timestamps out of search results', async () => {
-        const graph = await addProject('Stamped Search Project', 'Project used to check exposed fields on search', 'waiting_goal');
+        const graph = await addProject('Stamped Search Project', 'Project used to check exposed fields on search');
         await addNode(graph.id, 'TASK', 'Stamped search task', 'Search task with stamps');
 
         const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'search task' });

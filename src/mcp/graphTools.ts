@@ -4,8 +4,6 @@ import type { GraphAddControllerResponse } from '@domain/controllers/iGraphAddCo
 import type { GraphDeleteProjectControllerResponse } from '@domain/controllers/iGraphDeleteProjectController.ts';
 import { graphAddController, graphDeleteProjectController, graphGetProjectController, graphGetProjectsController } from '@src/container.ts';
 
-const STATUS_VALUES = ['waiting_goal', 'in_progress', 'in_validation', 'completed'] as const;
-
 function controllerResponseToText (response: GraphAddControllerResponse): string {
     if (response.success && response.project) {
         const { project } = response;
@@ -19,16 +17,15 @@ export function registerGraphTools (server: McpServer): void {
     server.registerTool(
         'graph-add',
         {
-            description: 'Add a new project to the agent workflow graph',
+            description: 'Add a new project to the agent workflow graph. Convention: one project per workspace, named after the workspace - create the workspace project here if it does not exist yet',
             inputSchema: z.object({
                 name: z.string().min(1).describe('Project name'),
-                description: z.string().min(1).describe('Project description'),
-                status: z.enum(STATUS_VALUES).describe('Initial project status').default('waiting_goal')
+                description: z.string().min(1).describe('Project description')
             })
         },
-        async ({ name, description, status }) => {
+        async ({ name, description }) => {
             const controller = await graphAddController();
-            const response = await controller.handle({ name, description, status });
+            const response = await controller.handle({ name, description });
 
             return {
                 content: [{ type: 'text' as const, text: controllerResponseToText(response) }],
@@ -40,7 +37,7 @@ export function registerGraphTools (server: McpServer): void {
     server.registerTool(
         'graph-get-projects',
         {
-            description: 'List all projects in the agent workflow graph'
+            description: 'List all projects in the agent workflow graph. First call of any session: use it to locate the project named after the current workspace (your working context); if none exists, create it with graph-add'
         },
         async () => {
             const controller = await graphGetProjectsController();

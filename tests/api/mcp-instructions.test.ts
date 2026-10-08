@@ -9,9 +9,13 @@ describe('MCP server instructions', () => {
 
         for (const anchor of [
             'shared working memory',
+            'One project per workspace, named after the workspace',
+            'Before starting any task',
+            'graph-get-projects',
             'graph-search-nodes',
             'graph-get-node',
             'graph-append-memo',
+            'SOLVED_BY',
             'in_progress',
             'CONSTRAINED_BY'
         ]) {

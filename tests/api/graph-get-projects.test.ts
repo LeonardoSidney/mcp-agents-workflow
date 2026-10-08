@@ -4,8 +4,8 @@ const { addProject, callTool, projectsCollection, textOf } = mcpTestHarness();
 
 describe('MCP server - graph-get-projects', () => {
     test('lists all the inserted projects', async () => {
-        await addProject('First Project', 'First project of the lifecycle', 'waiting_goal');
-        await addProject('Second Project', 'Second project of the lifecycle', 'in_progress');
+        await addProject('First Project', 'First project of the lifecycle');
+        await addProject('Second Project', 'Second project of the lifecycle');
 
         const result = await callTool('graph-get-projects');
 

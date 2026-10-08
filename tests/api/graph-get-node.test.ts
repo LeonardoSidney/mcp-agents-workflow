@@ -5,7 +5,7 @@ const { addEdge, addMemo, addNode, addProject, callTool, fetchNode, textOf } = m
 
 describe('MCP server - graph-get-node', () => {
     test('fetches a node by id', async () => {
-        const graph = await addProject('Fetch Project', 'Project used to fetch a node', 'waiting_goal');
+        const graph = await addProject('Fetch Project', 'Project used to fetch a node');
         const node = await addNode(graph.id, 'REQUIREMENT', 'Required behavior', 'Behavior the project must satisfy');
 
         const result = await fetchNode(node.id);
@@ -22,7 +22,7 @@ describe('MCP server - graph-get-node', () => {
     });
 
     test('keeps node timestamps out of tool responses', async () => {
-        const graph = await addProject('Stamps Project', 'Project used to check exposed fields', 'waiting_goal');
+        const graph = await addProject('Stamps Project', 'Project used to check exposed fields');
         const node = await addNode(graph.id, 'TASK', 'Stamped task', 'Task used to check exposed fields');
 
         const fetched = await fetchNode(node.id);
@@ -39,7 +39,7 @@ describe('MCP server - graph-get-node', () => {
     });
 
     test('keeps the description recorded on an edge when fetching the source node', async () => {
-        const graph = await addProject('Edge Memory Project', 'Project used to record edge memory', 'waiting_goal');
+        const graph = await addProject('Edge Memory Project', 'Project used to record edge memory');
         const rule = await addNode(graph.id, 'USER_DECISION', 'Reimbursement rule', 'Only expenses under the daily limit are reimbursed');
         const task = await addNode(graph.id, 'TASK', 'Prepare expense report', 'Prepare the final expense report');
         await addEdge(graph.id, task.id, rule.id, 'CONSTRAINED_BY', 'The daily limit rule applies because the report covers travel days');
@@ -57,7 +57,7 @@ describe('MCP server - graph-get-node', () => {
     });
 
     test('exposes the memos of a node in chronological order through graph-get-node', async () => {
-        const graph = await addProject('Memo Read Project', 'Project used to read node memos', 'waiting_goal');
+        const graph = await addProject('Memo Read Project', 'Project used to read node memos');
         const node = await addNode(graph.id, 'TASK', 'Refund task', 'Process the refund flow');
         await addMemo(node.id, 'agent', 'The refund queue is saturated, retrying later');
         await addMemo(node.id, 'user', 'The refund limit per customer is 500 per month');
@@ -78,7 +78,7 @@ describe('MCP server - graph-get-node', () => {
     });
 
     test('exposes empty memos for a node without any recorded discussion', async () => {
-        const graph = await addProject('Memo Empty Project', 'Project used to read a node without memos', 'waiting_goal');
+        const graph = await addProject('Memo Empty Project', 'Project used to read a node without memos');
         const node = await addNode(graph.id, 'FACT', 'Standing fact', 'A fact with no discussion');
 
         const fetched = await fetchNode(node.id);
@@ -89,7 +89,7 @@ describe('MCP server - graph-get-node', () => {
     });
 
     test('keeps memo timestamps out of tool responses', async () => {
-        const graph = await addProject('Memo Stamps Project', 'Project used to check exposed memo fields', 'waiting_goal');
+        const graph = await addProject('Memo Stamps Project', 'Project used to check exposed memo fields');
         const node = await addNode(graph.id, 'TASK', 'Stamped task', 'Task used to check exposed fields');
         await addMemo(node.id, 'agent', 'A memo with a stamp that must not be exposed');
 

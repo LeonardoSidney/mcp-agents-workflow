@@ -4,7 +4,7 @@ const { addNode, addProject, callTool, nodesCollection, textOf } = mcpTestHarnes
 
 describe('MCP server - graph-add-node', () => {
     test('adds a node linked to an existing graph', async () => {
-        const graph = await addProject('Project With Nodes', 'Project used to host nodes', 'waiting_goal');
+        const graph = await addProject('Project With Nodes', 'Project used to host nodes');
 
         const node = await addNode(graph.id, 'GOAL', 'Ship the workflow', 'The workflow graph should be usable end to end');
 

@@ -4,8 +4,8 @@ const { addProject, callTool, fetchProject, projectsCollection, textOf } = mcpTe
 
 describe('MCP server - graph-delete-project', () => {
     test('deletes one project by id', async () => {
-        const first = await addProject('First Project', 'First project of the lifecycle', 'waiting_goal');
-        await addProject('Second Project', 'Second project of the lifecycle', 'in_progress');
+        const first = await addProject('First Project', 'First project of the lifecycle');
+        await addProject('Second Project', 'Second project of the lifecycle');
 
         const deleteResult = await callTool('graph-delete-project', { id: first.id });
 

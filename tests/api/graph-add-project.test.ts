@@ -4,8 +4,8 @@ const { addProject, projectsCollection } = mcpTestHarness();
 
 describe('MCP server - graph-add-project', () => {
     test('creates two projects', async () => {
-        const first = await addProject('First Project', 'First project of the lifecycle', 'waiting_goal');
-        const second = await addProject('Second Project', 'Second project of the lifecycle', 'in_progress');
+        const first = await addProject('First Project', 'First project of the lifecycle');
+        const second = await addProject('Second Project', 'Second project of the lifecycle');
 
         expect(first.id).not.toEqual(second.id);
 

@@ -5,7 +5,7 @@ const { addEdge, addNode, addProject, callTool, edgesCollection, fetchNode, node
 
 describe('MCP server - graph-add-edge', () => {
     test('adds an edge that is stored in the edges collection with the returned id', async () => {
-        const graph = await addProject('Edge Lifecycle Project', 'Project used to add edges', 'waiting_goal');
+        const graph = await addProject('Edge Lifecycle Project', 'Project used to add edges');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task that owns the edge');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal pointed by the edge');
 
@@ -31,7 +31,7 @@ describe('MCP server - graph-add-edge', () => {
     });
 
     test('adds an edge to a target node of the same graph', async () => {
-        const graph = await addProject('Linked Project', 'Project hosting linked nodes', 'waiting_goal');
+        const graph = await addProject('Linked Project', 'Project hosting linked nodes');
         const goal = await addNode(graph.id, 'GOAL', 'Main goal', 'Main goal of the project');
         const task = await addNode(graph.id, 'TASK', 'Build the server', 'Build the MCP server');
 
@@ -63,7 +63,7 @@ describe('MCP server - graph-add-edge', () => {
     });
 
     test('adds parallel edges with different memories', async () => {
-        const graph = await addProject('Parallel Edge Project', 'Project used to test parallel edges', 'waiting_goal');
+        const graph = await addProject('Parallel Edge Project', 'Project used to test parallel edges');
         const rule = await addNode(graph.id, 'USER_DECISION', 'First rule', 'First recorded rule');
         const task = await addNode(graph.id, 'TASK', 'Constrained task', 'Task with two constraints');
 
@@ -81,7 +81,7 @@ describe('MCP server - graph-add-edge', () => {
 
     test('refuses to add an edge for a graph that does not exist', async () => {
         const missingGraphId = '00000000-0000-4000-8000-000000000000';
-        const graph = await addProject('Edge Graph', 'Project used to test a missing graph', 'waiting_goal');
+        const graph = await addProject('Edge Graph', 'Project used to test a missing graph');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task used in the edge');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal used in the edge');
 
@@ -100,7 +100,7 @@ describe('MCP server - graph-add-edge', () => {
     });
 
     test('refuses to add an edge from a source node that does not exist', async () => {
-        const graph = await addProject('Missing Source Project', 'Project used to test a missing source', 'waiting_goal');
+        const graph = await addProject('Missing Source Project', 'Project used to test a missing source');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal used in the edge');
 
         const result = await callTool('graph-add-edge', {
@@ -115,7 +115,7 @@ describe('MCP server - graph-add-edge', () => {
     });
 
     test('refuses to add an edge to a target node that does not exist', async () => {
-        const graph = await addProject('Missing Target Project', 'Project used to test a missing target', 'waiting_goal');
+        const graph = await addProject('Missing Target Project', 'Project used to test a missing target');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task used in the edge');
 
         const result = await callTool('graph-add-edge', {
@@ -130,8 +130,8 @@ describe('MCP server - graph-add-edge', () => {
     });
 
     test('refuses to add an edge from a source node of another graph', async () => {
-        const firstGraph = await addProject('First Edge Graph', 'First graph', 'waiting_goal');
-        const secondGraph = await addProject('Second Edge Graph', 'Second graph', 'waiting_goal');
+        const firstGraph = await addProject('First Edge Graph', 'First graph');
+        const secondGraph = await addProject('Second Edge Graph', 'Second graph');
         const foreignSource = await addNode(firstGraph.id, 'TASK', 'Foreign source', 'Task from another graph');
         const target = await addNode(secondGraph.id, 'GOAL', 'Local goal', 'Goal of the second graph');
 
@@ -150,8 +150,8 @@ describe('MCP server - graph-add-edge', () => {
     });
 
     test('refuses an edge to a target node of another graph', async () => {
-        const firstGraph = await addProject('First Graph', 'First graph', 'waiting_goal');
-        const secondGraph = await addProject('Second Graph', 'Second graph', 'waiting_goal');
+        const firstGraph = await addProject('First Graph', 'First graph');
+        const secondGraph = await addProject('Second Graph', 'Second graph');
         const foreignNode = await addNode(firstGraph.id, 'GOAL', 'Foreign goal', 'Goal from another graph');
         const task = await addNode(secondGraph.id, 'TASK', 'Cross graph task', 'Task linking to a node of another graph');
 
