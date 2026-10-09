@@ -5,7 +5,8 @@ export interface IGraphGetProjectController {
 }
 
 export type GraphGetProjectControllerParams = {
-    id: string;
+    id?: string;
+    name?: string;
 };
 
 export type GraphGetProjectControllerResponse = {

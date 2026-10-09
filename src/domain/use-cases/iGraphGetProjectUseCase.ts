@@ -5,7 +5,8 @@ export interface IGraphGetProjectUseCase {
 }
 
 export type GraphGetProjectUseCaseParams = {
-    id: string;
+    id?: string;
+    name?: string;
 };
 
 export type GraphGetProjectUseCaseResponse = {

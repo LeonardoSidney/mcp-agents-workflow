@@ -90,9 +90,9 @@ The server exposes **14 tools** across three toolsets:
 
 | Tool                   | Description                                                                                                                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `graph-add`            | Create a new project graph                                                                                                                                                                             |
+| `graph-add`            | Create a new project graph (the name is unique across the store)                                                                                                                                       |
 | `graph-get-projects`   | List all projects in the graph store                                                                                                                                                                   |
-| `graph-get-project`    | Fetch a single project by id (24-hex ObjectId)                                                                                                                                                         |
+| `graph-get-project`    | Fetch a single project by id (24-hex ObjectId) or exact name                                                                                                                                           |
 | `graph-delete-project` | Delete a project by id                                                                                                                                                                                 |
 | `graph-add-node`       | Add a typed node to an existing project graph                                                                                                                                                          |
 | `graph-get-nodes`      | List a project's nodes (descriptions only, no memo text; filter by type/status, cap with `limit`, newest first)                                                                                        |
@@ -111,7 +111,7 @@ On top of the tools, the server sends rich **instructions** to the MCP client at
 
 No per-workspace setup is needed. The convention is **one project per workspace, named after the workspace**, and the server instructions make the first session self-bootstrap:
 
-1. The agent calls `graph-get-projects` to locate the project named after the current workspace — creating it with `graph-add` when it does not exist yet.
+1. The agent looks up the project named after the current workspace with `graph-get-project` by exact name — a miss means it does not exist yet, so the agent creates it with `graph-add`.
 2. It reads the context (`graph-get-nodes`, `graph-search-nodes`) before working — picking up decisions, rules and resolutions recorded by past sessions.
 3. Before finishing, it writes back: finished work (`TASK` → `SOLUTION`), user rules (memos attributed to `user`), and lessons learned.
 

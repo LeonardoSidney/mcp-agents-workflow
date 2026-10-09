@@ -4,7 +4,7 @@ The graph is the team's shared working memory: nodes are projects, tasks, decisi
 One project per workspace, named after the workspace (the folder name of the current workspace in your context). The workspace's project is the working context: every task, decision and rule that belongs to this workspace lives in it.
 
 Before starting any task - new or continuing, no exceptions - bootstrap from the graph:
-- Locate the workspace project: call graph-get-projects and find the project named after the current workspace. If none exists, create it with graph-add using the workspace name.
+- Locate the workspace project: call graph-get-project with the workspace folder name. The lookup is an exact match, so a miss means the project has not been created for this workspace yet: create it with graph-add using the workspace name. Consult the graph-get-projects listing only to rule out a name different from the workspace folder name.
 - Read before doing work: graph-get-nodes for the most recently updated context, and graph-search-nodes for what relates to the task at hand.
 - Never ask the user for guidance the graph might already contain, and never re-derive a decision a past session might already have resolved.
 

@@ -12,6 +12,7 @@ import type {
     ListNodeGatewayParams,
     ListNodesGatewayParams,
     ListGraphGatewayParams,
+    ListGraphByNameGatewayParams,
     ListEdgesBySourceGatewayParams,
     ListEdgesByTargetGatewayParams,
     NodeDocument,
@@ -88,6 +89,17 @@ export class MongoDBGateway implements IDatabaseGateway {
         const collection = this.client.db().collection<RawProjectDocument>('projects');
 
         const document = await collection.findOne({ _id: new ObjectId(params.id) });
+        if (!document) {
+            return null;
+        }
+
+        return this.fromRawProject(document);
+    }
+
+    async listGraphByName (params: ListGraphByNameGatewayParams): Promise<ProjectDocument | null> {
+        const collection = this.client.db().collection<RawProjectDocument>('projects');
+
+        const document = await collection.findOne({ name: params.name });
         if (!document) {
             return null;
         }

@@ -29,6 +29,14 @@ export class GraphAddUseCase implements IGraphAddUseCase {
             };
         }
 
+        const duplicate = await this.projectRepository.getProjectByName({ name: params.name });
+        if (duplicate) {
+            return {
+                success: false,
+                error: `A project with this name already exists: ${params.name}`
+            };
+        }
+
         const { success, project, error } = this.graphAddService.mapProject(params);
         if (!success) {
             return {
