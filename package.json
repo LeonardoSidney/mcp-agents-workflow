@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "migrate:objectid": "tsx migration/scripts/migrate-objectid.ts",
     "seed": "tsx scripts/seed.ts",
     "test": "jest tests/unit",
     "test:api": "jest tests/api",

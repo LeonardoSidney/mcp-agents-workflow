@@ -34,7 +34,8 @@
     },
     "include": [
         "src",
-        "tests"
+        "tests",
+        "migration"
     ],
     "exclude": [
         "node_modules",
