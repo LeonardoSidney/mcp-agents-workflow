@@ -6,6 +6,7 @@ type SearchHit = {
     titleScore: number;
     descriptionScore: number;
     memoryScore: number;
+    bestMemo?: { id: string; author: string; text: string; score: number; };
     score: number;
 };
 
@@ -184,17 +185,50 @@ describe('MCP server - graph-search-nodes', () => {
         expect(text).not.toContain('updated_at');
     });
 
-    test('matches a memo discussion without exposing the memo text in results', async () => {
-        const graph = await addProject('Hidden Discussion Project', 'Project used to match memos without exposing them');
+    test('surfaces the single best-matching memo of the node as bestMemo', async () => {
+        const graph = await addProject('Best Memo Project', 'Project used to surface the best matching memo');
         const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
-        await addMemo(node.id, 'user', 'The confidential reimbursement clause');
+        const match = await addMemo(node.id, 'user', 'The confidential reimbursement clause');
+        await addMemo(node.id, 'agent', 'An unrelated note with no relevant words at all');
 
         const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'confidential reimbursement' });
         expect(result.isError).toBeFalsy();
-        expect(textOf(result)).not.toContain('reimbursement clause');
 
         const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
         expect(results.map(hit => hit.node.id)).toEqual([node.id]);
         expect(results[0]?.memoryScore).toBeGreaterThan(0);
+        expect(results[0]?.bestMemo).toMatchObject({ id: match.id, author: 'user' });
+        expect(results[0]?.bestMemo?.text).toContain('reimbursement clause');
+    });
+
+    test('omits bestMemo when no memo matches the query', async () => {
+        const graph = await addProject('Edge Only Search Project', 'Project used to check a hit without memos');
+        const node = await addNode(graph.id, 'TASK', 'Carro, porta', 'Neutral description only');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'carro porta' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results).toHaveLength(1);
+        expect(results[0]?.node.id).toEqual(node.id);
+        expect(results[0]?.bestMemo).toBeUndefined();
+    });
+
+    test('returns the full memo text when the best memo passes the floor', async () => {
+        const graph = await addProject('Long Memo Search Project', 'Project used to verify full memo text exposure');
+        const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
+        const padding = Array.from({ length: 40 }, (_, index) => `padded${index}`).join(' ');
+        const longText = `Audit deadline review board meets every single month ${padding}`;
+        const memo = await addMemo(node.id, 'agent', longText);
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'audit deadline review board' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results).toHaveLength(1);
+        expect(results[0]?.node.id).toEqual(node.id);
+        expect(results[0]?.bestMemo).toMatchObject({ id: memo.id, author: 'agent' });
+        expect(longText.length).toBeGreaterThan(240);
+        expect(results[0]?.bestMemo?.text).toEqual(longText);
     });
 });

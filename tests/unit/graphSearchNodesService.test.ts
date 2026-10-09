@@ -75,6 +75,64 @@ describe('GraphSearchNodesService', () => {
 
         const results = expectScored(response);
         expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 0, memoryScore: 1 });
+        expect(results[0]?.bestMemo).toMatchObject({ id: 'm1', author: 'agent', score: 1 });
+    });
+
+    test('ranks each memo individually, so the best match wins over the whole discussion', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Unrelated task',
+            description: '',
+            memos: [
+                {
+                    id: 'm1',
+                    nodeId: 'n1',
+                    author: 'agent',
+                    text: 'A long discussion about a budget planning session that covered many unrelated topics',
+                    createdAt: now
+                },
+                { id: 'm2', nodeId: 'n1', author: 'user', text: 'audit deadline', createdAt: now }
+            ]
+        });
+
+        const response = service.scoreNodes({ text: 'audit deadline', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 0, memoryScore: 1 });
+        expect(results[0]?.bestMemo).toMatchObject({ id: 'm2', author: 'user', score: 1 });
+    });
+
+    test('breaks a memo score tie toward the newest memo', () => {
+        const older = new Date(now.getTime() - 60000);
+        const node = buildNode({
+            id: 'n1',
+            title: 'Unrelated task',
+            description: '',
+            memos: [
+                { id: 'older', nodeId: 'n1', author: 'agent', text: 'audit deadline', createdAt: older },
+                { id: 'newer', nodeId: 'n1', author: 'user', text: 'audit deadline', createdAt: now }
+            ]
+        });
+
+        const response = service.scoreNodes({ text: 'audit deadline', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]?.bestMemo?.id).toEqual('newer');
+    });
+
+    test('returns no best memo when only the edge description matches', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Unrelated task',
+            description: '',
+            edges: [{ id: 'e1', type: 'CONSTRAINED_BY', targetId: 't1', description: 'database migration' }]
+        });
+
+        const response = service.scoreNodes({ text: 'database migration', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]?.memoryScore).toEqual(1);
+        expect(results[0]?.bestMemo).toBeNull();
     });
 
     test('scores outgoing edge descriptions in the memoryScore field', () => {

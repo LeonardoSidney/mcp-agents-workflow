@@ -1,3 +1,5 @@
+import type { EdgeReference } from '@domain/entities/edge.ts';
+import type { Memo, MemoMatch } from '@domain/entities/memo.ts';
 import type { GraphSearchNodesServiceParams, GraphSearchNodesServiceResponse, IGraphSearchNodesService, NodeSearchResult } from '@domain/services/iGraphSearchNodesService.ts';
 
 export class GraphSearchNodesService implements IGraphSearchNodesService {
@@ -15,13 +17,13 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
         for (const node of params.nodes) {
             const titleScore = this.fieldScore(queryTokens, node.title);
             const descriptionScore = this.fieldScore(queryTokens, node.description);
-            const memoryText = [
-                ...node.edges
-                    .map(edge => edge.description)
-                    .filter((description): description is string => Boolean(description)),
-                ...node.memos.map(memo => memo.text)
-            ].join(' ');
-            const memoryScore = this.fieldScore(queryTokens, memoryText);
+            const bestMemo = this.bestMatchingMemo(queryTokens, node.memos);
+            const edgeScore = this.bestEdgeScore(queryTokens, node.edges);
+            let memoScore = 0;
+            if (bestMemo) {
+                memoScore = bestMemo.score;
+            }
+            const memoryScore = Math.max(edgeScore, memoScore);
 
             if (titleScore === 0 && descriptionScore === 0 && memoryScore === 0) {
                 continue;
@@ -32,6 +34,7 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
                 titleScore,
                 descriptionScore,
                 memoryScore,
+                bestMemo,
                 score: (titleScore + descriptionScore + memoryScore) / 3
             });
         }
@@ -40,6 +43,47 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
             success: true,
             results
         };
+    }
+
+    private bestEdgeScore (queryTokens: string[], edges: EdgeReference[]): number {
+        let bestScore = 0;
+
+        for (const edge of edges) {
+            if (!edge.description) {
+                continue;
+            }
+
+            bestScore = Math.max(bestScore, this.fieldScore(queryTokens, edge.description));
+        }
+
+        return bestScore;
+    }
+
+    private bestMatchingMemo (queryTokens: string[], memos: Memo[]): MemoMatch | null {
+        let best: MemoMatch | null = null;
+
+        for (const memo of memos) {
+            const score = this.fieldScore(queryTokens, memo.text);
+            if (score === 0) {
+                continue;
+            }
+
+            const beatsBest = best === null || score > best.score;
+            const isTie = best !== null && score === best.score;
+            const isNewest = isTie && memo.createdAt.getTime() > (best as MemoMatch).createdAt.getTime();
+
+            if (beatsBest || isNewest) {
+                best = {
+                    id: memo.id,
+                    author: memo.author,
+                    text: memo.text,
+                    score,
+                    createdAt: memo.createdAt
+                };
+            }
+        }
+
+        return best;
     }
 
     private toTokens (text: string): string[] {

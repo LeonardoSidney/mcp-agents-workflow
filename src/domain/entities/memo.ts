@@ -1,23 +1,31 @@
 import type { MemoAuthor } from '@domain/constants/memo-authors.ts';
 
 export type Memo = {
-  id: string;
-  nodeId: string;
-  author: MemoAuthor;
-  text: string;
-  createdAt: Date;
+    id: string;
+    nodeId: string;
+    author: MemoAuthor;
+    text: string;
+    createdAt: Date;
 };
 
 export type MemoSummary = {
-  id: string;
-  author: MemoAuthor;
-  text: string;
+    id: string;
+    author: MemoAuthor;
+    text: string;
+};
+
+export type MemoMatch = {
+    id: string;
+    author: MemoAuthor;
+    text: string;
+    score: number;
+    createdAt: Date;
 };
 
 export function toMemoSummary (memo: Memo): MemoSummary {
-  return {
-    id: memo.id,
-    author: memo.author,
-    text: memo.text
-  };
+    return {
+        id: memo.id,
+        author: memo.author,
+        text: memo.text
+    };
 }
