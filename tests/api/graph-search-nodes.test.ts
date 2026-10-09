@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { mcpTestHarness } from './mcpHarness.ts';
 
 type SearchHit = {
@@ -165,7 +164,7 @@ describe('MCP server - graph-search-nodes', () => {
     });
 
     test('fails the search when the graph does not exist', async () => {
-        const result = await callTool('graph-search-nodes', { graphId: randomUUID(), text: 'anything' });
+        const result = await callTool('graph-search-nodes', { graphId: '0'.repeat(24), text: 'anything' });
 
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('Graph not found');

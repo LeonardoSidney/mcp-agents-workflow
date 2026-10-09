@@ -5,7 +5,7 @@ import type { Edge } from '@domain/entities/edge.ts';
 export class EdgeDTO {
     static to_mongodb (edge: Edge): EdgeDocument {
         return {
-            id: edge.id,
+            _id: edge.id,
             graph_id: edge.graphId,
             source_id: edge.sourceId,
             target_id: edge.targetId,
@@ -20,7 +20,7 @@ export class EdgeDTO {
         }
 
         return {
-            id: document.id,
+            id: document._id,
             graphId: document.graph_id,
             sourceId: document.source_id,
             targetId: document.target_id,

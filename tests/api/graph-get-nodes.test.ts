@@ -4,11 +4,13 @@ const { addMemo, addNode, addProject, callTool, textOf } = mcpTestHarness();
 
 describe('MCP server - graph-get-nodes', () => {
     test('lists the nodes of one graph sorted by the most recent first', async () => {
+        const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         const graph = await addProject('Panorama Project', 'Project used to list nodes');
         const otherGraph = await addProject('Other Graph', 'Graph that must not leak nodes');
 
         await addNode(otherGraph.id, 'GOAL', 'Other goal', 'Goal of the other graph');
         await addNode(graph.id, 'GOAL', 'First goal', 'First goal of the panorama');
+        await sleep(5);
         const latest = await addNode(graph.id, 'TASK', 'Latest task', 'Most recently added node of the panorama');
 
         const result = await callTool('graph-get-nodes', { graphId: graph.id });

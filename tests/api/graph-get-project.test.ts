@@ -4,7 +4,7 @@ import { mcpTestHarness } from './mcpHarness.ts';
 const { addProject, fetchProject, textOf } = mcpTestHarness();
 
 describe('MCP server - graph-get-project', () => {
-    test('fetches a project by the returned uuidv4', async () => {
+    it('fetches a project by the returned id', async () => {
         const first = await addProject('First Project', 'First project of the lifecycle');
         const second = await addProject('Second Project', 'Second project of the lifecycle');
 

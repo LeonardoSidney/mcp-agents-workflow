@@ -77,7 +77,7 @@ export class NodeRepository implements INodeRepository {
         const outgoing = await this.databaseGateway.listEdgesBySource({ graphId: params.graphId, sourceId: params.nodeId });
         const incoming = await this.databaseGateway.listEdgesByTarget({ graphId: params.graphId, targetId: params.nodeId });
 
-        const attachedIds = [...outgoing, ...incoming].map(document => document.id);
+        const attachedIds = [...outgoing, ...incoming].map(document => document._id);
 
         return attachedIds.filter((id, index) => attachedIds.indexOf(id) === index);
     }

@@ -5,19 +5,19 @@ import type { NodeSummary } from '@domain/entities/node.ts';
 import type { Edge } from '@domain/entities/edge.ts';
 import type { Memo } from '@domain/entities/memo.ts';
 import type { Project } from '@domain/entities/project.ts';
-import type { EdgeDocument, MemoDocument, NodeDocument, ProjectDocument } from '@domain/gateways/iDatabaseGateway.ts';
+import type { RawEdgeDocument, RawMemoDocument, RawNodeDocument, RawProjectDocument } from '@adapters/gateways/mongoDbGateway.ts';
 import { shutdownDatabase } from '@src/boot.ts';
 import { createServer } from '@src/mcpServer.ts';
 
 const MONGODB_URI = 'mongodb://127.0.0.1:27017/mcp-agents-workflow-test';
-const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const OBJECT_ID_REGEX = /^[0-9a-f]{24}$/i;
 
 export function mcpTestHarness () {
     const mongoClient = new MongoClient(MONGODB_URI);
-    const projectsCollection: Collection<ProjectDocument> = mongoClient.db().collection('projects');
-    const nodesCollection: Collection<NodeDocument> = mongoClient.db().collection('nodes');
-    const edgesCollection: Collection<EdgeDocument> = mongoClient.db().collection('edges');
-    const memosCollection: Collection<MemoDocument> = mongoClient.db().collection('memos');
+    const projectsCollection: Collection<RawProjectDocument> = mongoClient.db().collection('projects');
+    const nodesCollection: Collection<RawNodeDocument> = mongoClient.db().collection('nodes');
+    const edgesCollection: Collection<RawEdgeDocument> = mongoClient.db().collection('edges');
+    const memosCollection: Collection<RawMemoDocument> = mongoClient.db().collection('memos');
 
     let server: McpServer | undefined;
     let client: Client | undefined;
@@ -103,8 +103,8 @@ export function mcpTestHarness () {
 
         const jsonStart = textOf(result).indexOf('{');
         const parsed = JSON.parse(textOf(result).slice(jsonStart)) as Project;
-        if (!parsed.id.match(UUID_V4_REGEX)) {
-            throw new Error(`graph-add did not return a uuidv4 id: ${parsed.id}`);
+        if (!parsed.id.match(OBJECT_ID_REGEX)) {
+            throw new Error(`graph-add did not return a 24-hex ObjectId: ${parsed.id}`);
         }
 
         return parsed;
@@ -131,8 +131,8 @@ export function mcpTestHarness () {
 
         const jsonStart = textOf(result).indexOf('{');
         const parsed = JSON.parse(textOf(result).slice(jsonStart)) as NodeSummary;
-        if (!parsed.id.match(UUID_V4_REGEX)) {
-            throw new Error(`graph-add-node did not return a uuidv4 id: ${parsed.id}`);
+        if (!parsed.id.match(OBJECT_ID_REGEX)) {
+            throw new Error(`graph-add-node did not return a 24-hex ObjectId: ${parsed.id}`);
         }
 
         return parsed;
@@ -160,8 +160,8 @@ export function mcpTestHarness () {
 
         const jsonStart = textOf(result).indexOf('{');
         const parsed = JSON.parse(textOf(result).slice(jsonStart)) as Edge;
-        if (!parsed.id.match(UUID_V4_REGEX)) {
-            throw new Error(`graph-add-edge did not return a uuidv4 id: ${parsed.id}`);
+        if (!parsed.id.match(OBJECT_ID_REGEX)) {
+            throw new Error(`graph-add-edge did not return a 24-hex ObjectId: ${parsed.id}`);
         }
 
         return parsed;
@@ -185,8 +185,8 @@ export function mcpTestHarness () {
 
         const jsonStart = textOf(result).indexOf('{');
         const parsed = JSON.parse(textOf(result).slice(jsonStart)) as Memo;
-        if (!parsed.id.match(UUID_V4_REGEX)) {
-            throw new Error(`graph-append-memo did not return a uuidv4 id: ${parsed.id}`);
+        if (!parsed.id.match(OBJECT_ID_REGEX)) {
+            throw new Error(`graph-append-memo did not return a 24-hex ObjectId: ${parsed.id}`);
         }
 
         return parsed;

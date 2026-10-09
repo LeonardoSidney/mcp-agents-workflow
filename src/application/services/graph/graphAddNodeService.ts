@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { isNodeStatus } from '@domain/guards/node-status.ts';
 import { isNodeType } from '@domain/guards/node-type.ts';
 import type { Node } from '@domain/entities/node.ts';
@@ -16,7 +16,7 @@ export class GraphAddNodeService implements IGraphAddNodeService {
 
         const now = new Date();
 
-        const nodeId = randomUUID();
+        const nodeId = randomBytes(12).toString('hex');
 
         const node: Node = {
             id: nodeId,

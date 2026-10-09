@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { isMemoAuthor } from '@domain/guards/memo-author.ts';
 import type { Memo } from '@domain/entities/memo.ts';
 import type { GraphAppendMemoServiceParams, GraphAppendMemoServiceResponse, IGraphAppendMemoService } from '@domain/services/iGraphAppendMemoService.ts';
@@ -14,7 +14,7 @@ export class GraphAppendMemoService implements IGraphAppendMemoService {
     }
 
     const memo: Memo = {
-      id: randomUUID(),
+      id: randomBytes(12).toString('hex'),
       nodeId: params.nodeId,
       author: params.author,
       text: params.text,

@@ -3,6 +3,7 @@ import * as z from 'zod/v4';
 import type { GraphAddControllerResponse } from '@domain/controllers/iGraphAddController.ts';
 import type { GraphDeleteProjectControllerResponse } from '@domain/controllers/iGraphDeleteProjectController.ts';
 import { graphAddController, graphDeleteProjectController, graphGetProjectController, graphGetProjectsController } from '@src/container.ts';
+import { objectId } from './objectIdSchema.ts';
 
 function controllerResponseToText (response: GraphAddControllerResponse): string {
     if (response.success && response.project) {
@@ -57,9 +58,9 @@ export function registerGraphTools (server: McpServer): void {
     server.registerTool(
         'graph-get-project',
         {
-            description: 'Fetch a single project from the agent workflow graph by id (uuidv4)',
+            description: 'Fetch a single project from the agent workflow graph by id (24-hex ObjectId)',
             inputSchema: z.object({
-                id: z.uuid().describe('Project id (uuidv4)')
+                id: objectId.describe('Project id (24-hex ObjectId)')
             })
         },
         async ({ id }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {
@@ -80,9 +81,9 @@ export function registerGraphTools (server: McpServer): void {
     server.registerTool(
         'graph-delete-project',
         {
-            description: 'Delete a project from the agent workflow graph by id (uuidv4)',
+            description: 'Delete a project from the agent workflow graph by id (24-hex ObjectId)',
             inputSchema: z.object({
-                id: z.string().min(1).describe('Project id to delete')
+                id: objectId.describe('Project id to delete (24-hex ObjectId)')
             })
         },
         async ({ id }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {

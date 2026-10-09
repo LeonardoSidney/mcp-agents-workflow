@@ -6,7 +6,7 @@ export class ProjectDTO {
         const now = new Date();
 
         return {
-            id: project.id,
+            _id: project.id,
             name: project.name,
             description: project.description,
             created_at: now,
@@ -16,7 +16,7 @@ export class ProjectDTO {
 
     static to_domain (document: ProjectDocument): Project {
         return {
-            id: document.id,
+            id: document._id,
             name: document.name,
             description: document.description
         };

@@ -20,7 +20,7 @@ describe('MCP server - graph-delete-node', () => {
     });
 
     test('refuses to delete a node that does not exist', async () => {
-        const missingNodeId = '00000000-0000-4000-8000-000000000000';
+        const missingNodeId = '0'.repeat(24);
 
         const result = await callTool('graph-delete-node', { id: missingNodeId });
 
@@ -49,7 +49,12 @@ describe('MCP server - graph-delete-node', () => {
 
         const remainingNodes = await nodesCollection.find({}).toArray();
         expect(remainingNodes).toHaveLength(1);
-        expect(remainingNodes[0]).toMatchObject({ id: goal.id });
+        const remaining = remainingNodes[0];
+        if (!remaining) {
+            throw new Error('Expected the goal node to remain in the database');
+        }
+
+        expect(remaining._id.toHexString()).toEqual(goal.id);
     });
 
     test('allows deleting a node whose edges were deleted earlier', async () => {

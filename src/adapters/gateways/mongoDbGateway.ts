@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import type { Filter, MongoClient } from 'mongodb';
 import type {
     AddEdgeGatewayParams,
@@ -24,6 +25,42 @@ import type {
     DeleteMemosByNodeGatewayParams
 } from '@domain/gateways/iDatabaseGateway.ts';
 
+export type RawProjectDocument = {
+    _id: ObjectId;
+    name: string;
+    description: string;
+    created_at: Date;
+    updated_at: Date;
+};
+
+export type RawNodeDocument = {
+    _id: ObjectId;
+    graph_id: string;
+    type: string;
+    status: string;
+    title: string;
+    description: string;
+    created_at: Date;
+    updated_at: Date;
+};
+
+export type RawEdgeDocument = {
+    _id: ObjectId;
+    graph_id: string;
+    source_id: string;
+    target_id: string;
+    type: string;
+    description?: string;
+};
+
+export type RawMemoDocument = {
+    _id: ObjectId;
+    node_id: string;
+    author: string;
+    text: string;
+    created_at: Date;
+};
+
 export class MongoDBGateway implements IDatabaseGateway {
     private readonly client: MongoClient;
 
@@ -34,39 +71,46 @@ export class MongoDBGateway implements IDatabaseGateway {
     }
 
     async addGraph (params: AddGraphGatewayParams): Promise<void> {
-        const collection = this.client.db().collection<ProjectDocument>('projects');
+        const collection = this.client.db().collection<RawProjectDocument>('projects');
 
-        await collection.insertOne(params.project);
+        await collection.insertOne(this.toRawProject(params.project));
     }
 
     async listGraphs (): Promise<ProjectDocument[]> {
-        const collection = this.client.db().collection<ProjectDocument>('projects');
+        const collection = this.client.db().collection<RawProjectDocument>('projects');
 
-        return collection.find({}).toArray();
+        const documents = await collection.find({}).toArray();
+
+        return documents.map(document => this.fromRawProject(document));
     }
 
     async listGraph (params: ListGraphGatewayParams): Promise<ProjectDocument | null> {
-        const collection = this.client.db().collection<ProjectDocument>('projects');
+        const collection = this.client.db().collection<RawProjectDocument>('projects');
 
-        return collection.findOne({ id: params.id });
+        const document = await collection.findOne({ _id: new ObjectId(params.id) });
+        if (!document) {
+            return null;
+        }
+
+        return this.fromRawProject(document);
     }
 
     async deleteGraph (params: DeleteGraphGatewayParams): Promise<boolean> {
-        const collection = this.client.db().collection<ProjectDocument>('projects');
+        const collection = this.client.db().collection<RawProjectDocument>('projects');
 
-        const result = await collection.deleteOne({ id: params.id });
+        const result = await collection.deleteOne({ _id: new ObjectId(params.id) });
 
         return result.deletedCount > 0;
     }
 
     async addNode (params: AddNodeGatewayParams): Promise<void> {
-        const collection = this.client.db().collection<NodeDocument>('nodes');
+        const collection = this.client.db().collection<RawNodeDocument>('nodes');
 
-        await collection.insertOne(params.node);
+        await collection.insertOne(this.toRawNode(params.node));
     }
 
     async updateNode (params: UpdateNodeGatewayParams): Promise<boolean> {
-        const collection = this.client.db().collection<NodeDocument>('nodes');
+        const collection = this.client.db().collection<RawNodeDocument>('nodes');
         const node = params.node;
 
         const update = {
@@ -78,20 +122,25 @@ export class MongoDBGateway implements IDatabaseGateway {
             }
         };
 
-        const result = await collection.updateOne({ id: node.id }, update);
+        const result = await collection.updateOne({ _id: new ObjectId(node._id) }, update);
 
         return result.matchedCount > 0;
     }
 
     async listNode (params: ListNodeGatewayParams): Promise<NodeDocument | null> {
-        const collection = this.client.db().collection<NodeDocument>('nodes');
+        const collection = this.client.db().collection<RawNodeDocument>('nodes');
 
-        return collection.findOne({ id: params.id });
+        const document = await collection.findOne({ _id: new ObjectId(params.id) });
+        if (!document) {
+            return null;
+        }
+
+        return this.fromRawNode(document);
     }
 
     async listNodes (params: ListNodesGatewayParams): Promise<NodeDocument[]> {
-        const collection = this.client.db().collection<NodeDocument>('nodes');
-        const filter: Filter<NodeDocument> = { graph_id: params.graphId };
+        const collection = this.client.db().collection<RawNodeDocument>('nodes');
+        const filter: Filter<RawNodeDocument> = { graph_id: params.graphId };
 
         if (params.type) {
             filter.type = params.type;
@@ -102,29 +151,29 @@ export class MongoDBGateway implements IDatabaseGateway {
         }
 
         const cursor = collection.find(filter).sort({ updated_at: -1 });
-        if (params.limit) {
-            return cursor.limit(params.limit).toArray();
-        }
+        const rawDocuments = params.limit
+            ? await cursor.limit(params.limit).toArray()
+            : await cursor.toArray();
 
-        return cursor.toArray();
+        return rawDocuments.map(document => this.fromRawNode(document));
     }
 
     async deleteNode (params: DeleteNodeGatewayParams): Promise<boolean> {
-        const collection = this.client.db().collection<NodeDocument>('nodes');
+        const collection = this.client.db().collection<RawNodeDocument>('nodes');
 
-        const result = await collection.deleteOne({ id: params.id });
+        const result = await collection.deleteOne({ _id: new ObjectId(params.id) });
 
         return result.deletedCount > 0;
     }
 
     async addEdge (params: AddEdgeGatewayParams): Promise<void> {
-        const collection = this.client.db().collection<EdgeDocument>('edges');
+        const collection = this.client.db().collection<RawEdgeDocument>('edges');
 
-        await collection.insertOne(params.edge);
+        await collection.insertOne(this.toRawEdge(params.edge));
     }
 
     async updateEdge (params: UpdateEdgeGatewayParams): Promise<boolean> {
-        const collection = this.client.db().collection<EdgeDocument>('edges');
+        const collection = this.client.db().collection<RawEdgeDocument>('edges');
         const edge = params.edge;
 
         const update = {
@@ -134,61 +183,120 @@ export class MongoDBGateway implements IDatabaseGateway {
             }
         };
 
-        const result = await collection.updateOne({ id: edge.id }, update);
+        const result = await collection.updateOne({ _id: new ObjectId(edge._id) }, update);
 
         return result.matchedCount > 0;
     }
 
     async listEdge (params: ListEdgeGatewayParams): Promise<EdgeDocument | null> {
-        const collection = this.client.db().collection<EdgeDocument>('edges');
+        const collection = this.client.db().collection<RawEdgeDocument>('edges');
 
-        return collection.findOne({ id: params.id });
+        const document = await collection.findOne({ _id: new ObjectId(params.id) });
+        if (!document) {
+            return null;
+        }
+
+        return this.fromRawEdge(document);
     }
 
     async deleteEdge (params: DeleteEdgeGatewayParams): Promise<boolean> {
-        const collection = this.client.db().collection<EdgeDocument>('edges');
+        const collection = this.client.db().collection<RawEdgeDocument>('edges');
 
-        const result = await collection.deleteOne({ graph_id: params.graphId, id: params.id });
+        const result = await collection.deleteOne({ graph_id: params.graphId, _id: new ObjectId(params.id) });
 
         return result.deletedCount > 0;
     }
 
     async listEdgesBySource (params: ListEdgesBySourceGatewayParams): Promise<EdgeDocument[]> {
-        const collection = this.client.db().collection<EdgeDocument>('edges');
+        const collection = this.client.db().collection<RawEdgeDocument>('edges');
 
-        return collection
+        const documents = await collection
             .find({ graph_id: params.graphId, source_id: params.sourceId })
             .toArray();
+
+        return documents.map(document => this.fromRawEdge(document));
     }
 
     async listEdgesByTarget (params: ListEdgesByTargetGatewayParams): Promise<EdgeDocument[]> {
-        const collection = this.client.db().collection<EdgeDocument>('edges');
+        const collection = this.client.db().collection<RawEdgeDocument>('edges');
 
-        return collection
+        const documents = await collection
             .find({ graph_id: params.graphId, target_id: params.targetId })
             .toArray();
+
+        return documents.map(document => this.fromRawEdge(document));
     }
 
     async addMemo (params: AddMemoGatewayParams): Promise<void> {
-        const collection = this.client.db().collection<MemoDocument>('memos');
+        const collection = this.client.db().collection<RawMemoDocument>('memos');
 
-        await collection.insertOne(params.memo);
+        await collection.insertOne(this.toRawMemo(params.memo));
     }
 
     async listMemosByNode (params: ListMemosByNodeGatewayParams): Promise<MemoDocument[]> {
-        const collection = this.client.db().collection<MemoDocument>('memos');
+        const collection = this.client.db().collection<RawMemoDocument>('memos');
 
-        return collection
+        const documents = await collection
             .find({ node_id: params.nodeId })
             .sort({ created_at: 1 })
             .toArray();
+
+        return documents.map(document => this.fromRawMemo(document));
     }
 
     async deleteMemosByNode (params: DeleteMemosByNodeGatewayParams): Promise<boolean> {
-        const collection = this.client.db().collection<MemoDocument>('memos');
+        const collection = this.client.db().collection<RawMemoDocument>('memos');
 
         const result = await collection.deleteMany({ node_id: params.nodeId });
 
         return result.deletedCount > 0;
+    }
+
+    private toRawProject (document: ProjectDocument): RawProjectDocument {
+        const { _id, ...rest } = document;
+
+        return { _id: new ObjectId(_id), ...rest };
+    }
+
+    private fromRawProject (document: RawProjectDocument): ProjectDocument {
+        const { _id, ...rest } = document;
+
+        return { _id: _id.toHexString(), ...rest };
+    }
+
+    private toRawNode (document: NodeDocument): RawNodeDocument {
+        const { _id, ...rest } = document;
+
+        return { _id: new ObjectId(_id), ...rest };
+    }
+
+    private fromRawNode (document: RawNodeDocument): NodeDocument {
+        const { _id, ...rest } = document;
+
+        return { _id: _id.toHexString(), ...rest };
+    }
+
+    private toRawEdge (document: EdgeDocument): RawEdgeDocument {
+        const { _id, ...rest } = document;
+
+        return { _id: new ObjectId(_id), ...rest };
+    }
+
+    private fromRawEdge (document: RawEdgeDocument): EdgeDocument {
+        const { _id, ...rest } = document;
+
+        return { _id: _id.toHexString(), ...rest };
+    }
+
+    private toRawMemo (document: MemoDocument): RawMemoDocument {
+        const { _id, ...rest } = document;
+
+        return { _id: new ObjectId(_id), ...rest };
+    }
+
+    private fromRawMemo (document: RawMemoDocument): MemoDocument {
+        const { _id, ...rest } = document;
+
+        return { _id: _id.toHexString(), ...rest };
     }
 }

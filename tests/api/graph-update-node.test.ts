@@ -1,4 +1,5 @@
 import type { NodeWithMemos } from '@domain/entities/node.ts';
+import { ObjectId } from 'mongodb';
 import { mcpTestHarness } from './mcpHarness.ts';
 
 const { addEdge, addMemo, addNode, addProject, callTool, fetchNode, nodesCollection, textOf } = mcpTestHarness();
@@ -26,7 +27,7 @@ describe('MCP server - graph-update-node', () => {
             description: 'MCP server running and tests green'
         });
 
-        const saved = await nodesCollection.find({ id: node.id }).toArray();
+        const saved = await nodesCollection.find({ _id: new ObjectId(node.id) }).toArray();
         expect(saved).toHaveLength(1);
         const stored = saved[0];
         if (!stored) {
@@ -74,7 +75,7 @@ describe('MCP server - graph-update-node', () => {
     });
 
     test('refuses to update a node that does not exist', async () => {
-        const missingNodeId = '00000000-0000-4000-8000-000000000000';
+        const missingNodeId = '0'.repeat(24);
 
         const result = await callTool('graph-update-node', { id: missingNodeId, status: 'completed' });
 

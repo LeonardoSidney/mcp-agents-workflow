@@ -1,5 +1,6 @@
 import type { Edge } from '@domain/entities/edge.ts';
 import type { NodeWithMemos } from '@domain/entities/node.ts';
+import { ObjectId } from 'mongodb';
 import { mcpTestHarness } from './mcpHarness.ts';
 
 const { addEdge, addNode, addProject, callTool, edgesCollection, fetchNode, textOf } = mcpTestHarness();
@@ -18,7 +19,7 @@ describe('MCP server - graph-update-edge', () => {
         const parsed = JSON.parse(textOf(result).slice(textOf(result).indexOf('{'))) as Edge;
         expect(parsed).toMatchObject({ id: edge.id, type: 'PART_OF', description: 'Refined memory' });
 
-        const stored = await edgesCollection.find({ id: edge.id }).toArray();
+        const stored = await edgesCollection.find({ _id: new ObjectId(edge.id) }).toArray();
         expect(stored[0]).toMatchObject({ type: 'PART_OF', description: 'Refined memory' });
     });
 
@@ -35,13 +36,13 @@ describe('MCP server - graph-update-edge', () => {
         const parsed = JSON.parse(textOf(result).slice(textOf(result).indexOf('{'))) as Edge;
         expect(parsed).toMatchObject({ id: edge.id, type: 'RELATED_TO', description: 'Memory that must survive' });
 
-        const stored = await edgesCollection.find({ id: edge.id }).toArray();
+        const stored = await edgesCollection.find({ _id: new ObjectId(edge.id) }).toArray();
         expect(stored[0]).toMatchObject({ type: 'RELATED_TO', description: 'Memory that must survive' });
     });
 
     test('refuses to update an edge that does not exist', async () => {
         const result = await callTool('graph-update-edge', {
-            id: '00000000-0000-4000-8000-000000000000',
+            id: '0'.repeat(24),
             description: 'New memory'
         });
 

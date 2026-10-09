@@ -27,7 +27,7 @@ describe('MCP server - graph-delete-edge', () => {
     });
 
     test('refuses to delete an edge that does not exist', async () => {
-        const result = await callTool('graph-delete-edge', { id: '00000000-0000-4000-8000-000000000000' });
+        const result = await callTool('graph-delete-edge', { id: '0'.repeat(24) });
 
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('Edge not found');

@@ -1,4 +1,5 @@
 import type { NodeWithMemos } from '@domain/entities/node.ts';
+import { ObjectId } from 'mongodb';
 import { mcpTestHarness } from './mcpHarness.ts';
 
 const { addEdge, addNode, addProject, callTool, edgesCollection, fetchNode, nodesCollection, textOf } = mcpTestHarness();
@@ -18,7 +19,7 @@ describe('MCP server - graph-add-edge', () => {
         const stored = await edgesCollection.find({}).toArray();
         expect(stored).toHaveLength(1);
         expect(stored[0]).toMatchObject({
-            id: edge.id,
+            _id: new ObjectId(edge.id),
             graph_id: graph.id,
             source_id: source.id,
             target_id: target.id,
@@ -37,7 +38,7 @@ describe('MCP server - graph-add-edge', () => {
 
         const edge = await addEdge(graph.id, task.id, goal.id, 'PART_OF');
 
-        const saved = await nodesCollection.find({ id: task.id }).toArray();
+        const saved = await nodesCollection.find({ _id: new ObjectId(task.id) }).toArray();
         const storedTask = saved[0];
         if (!storedTask) {
             throw new Error(`Expected the task node to be stored: ${task.id}`);
@@ -48,11 +49,12 @@ describe('MCP server - graph-add-edge', () => {
         const edgeDocuments = await edgesCollection.find({ source_id: task.id }).toArray();
         expect(edgeDocuments).toHaveLength(1);
         const edgeDocument = edgeDocuments[0];
-        if (!edgeDocument?.id) {
+        if (!edgeDocument?._id) {
             throw new Error('Expected the stored edge to carry an id');
         }
 
-        expect(edgeDocument).toMatchObject({ id: edge.id, type: 'PART_OF', target_id: goal.id, graph_id: graph.id });
+        expect(edgeDocument._id.toHexString()).toEqual(edge.id);
+        expect(edgeDocument).toMatchObject({ type: 'PART_OF', target_id: goal.id, graph_id: graph.id });
 
         const fetched = await fetchNode(task.id);
         expect(fetched.isError).toBeFalsy();
@@ -80,7 +82,7 @@ describe('MCP server - graph-add-edge', () => {
     });
 
     test('refuses to add an edge for a graph that does not exist', async () => {
-        const missingGraphId = '00000000-0000-4000-8000-000000000000';
+        const missingGraphId = '0'.repeat(24);
         const graph = await addProject('Edge Graph', 'Project used to test a missing graph');
         const source = await addNode(graph.id, 'TASK', 'Source task', 'Task used in the edge');
         const target = await addNode(graph.id, 'GOAL', 'Target goal', 'Goal used in the edge');
@@ -105,7 +107,7 @@ describe('MCP server - graph-add-edge', () => {
 
         const result = await callTool('graph-add-edge', {
             graphId: graph.id,
-            sourceId: '00000000-0000-4000-8000-000000000000',
+            sourceId: '0'.repeat(24),
             targetId: target.id,
             type: 'PART_OF'
         });
@@ -121,7 +123,7 @@ describe('MCP server - graph-add-edge', () => {
         const result = await callTool('graph-add-edge', {
             graphId: graph.id,
             sourceId: source.id,
-            targetId: '00000000-0000-4000-8000-000000000000',
+            targetId: '0'.repeat(24),
             type: 'PART_OF'
         });
 

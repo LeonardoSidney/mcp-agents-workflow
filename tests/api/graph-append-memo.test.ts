@@ -46,7 +46,7 @@ describe('MCP server - graph-append-memo', () => {
     });
 
     test('refuses to append a memo to a node that does not exist', async () => {
-        const missingNodeId = '00000000-0000-4000-8000-000000000000';
+        const missingNodeId = '0'.repeat(24);
 
         const result = await callTool('graph-append-memo', { id: missingNodeId, author: 'agent', text: 'An orphan memo' });
 

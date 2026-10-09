@@ -21,7 +21,7 @@ describe('MCP server - graph-add-node', () => {
     });
 
     test('refuses to add a node for a graph that does not exist', async () => {
-        const missingGraphId = '00000000-0000-4000-8000-000000000000';
+        const missingGraphId = '0'.repeat(24);
 
         const result = await callTool('graph-add-node', {
             graphId: missingGraphId,

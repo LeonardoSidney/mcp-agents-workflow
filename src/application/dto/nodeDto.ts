@@ -6,7 +6,7 @@ import type { Node } from '@domain/entities/node.ts';
 export class NodeDTO {
     static to_mongodb (node: Node): NodeDocument {
         return {
-            id: node.id,
+            _id: node.id,
             graph_id: node.graphId,
             type: node.type,
             status: node.status,
@@ -27,7 +27,7 @@ export class NodeDTO {
         }
 
         return {
-            id: document.id,
+            id: document._id,
             graphId: document.graph_id,
             type: document.type,
             status: document.status,

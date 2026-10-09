@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { isEdgeType } from '@domain/guards/edge-type.ts';
 import type { Edge } from '@domain/entities/edge.ts';
 import type { GraphAddEdgeServiceParams, GraphAddEdgeServiceResponse, GraphUpdateEdgeServiceParams, GraphUpdateEdgeServiceResponse, IGraphAddEdgeService, IGraphUpdateEdgeService } from '@domain/services/iGraphEdgeService.ts';
@@ -14,7 +14,7 @@ export class GraphEdgeService implements IGraphAddEdgeService, IGraphUpdateEdgeS
         }
 
         const edge: Edge = {
-            id: randomUUID(),
+            id: randomBytes(12).toString('hex'),
             graphId: params.graphId,
             sourceId: params.sourceId,
             targetId: params.targetId,

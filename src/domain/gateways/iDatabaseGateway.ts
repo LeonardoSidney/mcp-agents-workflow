@@ -58,7 +58,7 @@ export type DeleteNodeGatewayParams = {
 };
 
 export type ProjectDocument = {
-    id: string;
+    _id: string;
     name: string;
     description: string;
     created_at: Date;
@@ -66,7 +66,7 @@ export type ProjectDocument = {
 };
 
 export type NodeDocument = {
-    id: string;
+    _id: string;
     graph_id: string;
     type: string;
     status: string;
@@ -77,7 +77,7 @@ export type NodeDocument = {
 };
 
 export type EdgeDocument = {
-    id: string;
+    _id: string;
     graph_id: string;
     source_id: string;
     target_id: string;
@@ -113,7 +113,7 @@ export type DeleteEdgeGatewayParams = {
 };
 
 export type MemoDocument = {
-    id: string;
+    _id: string;
     node_id: string;
     author: string;
     text: string;
