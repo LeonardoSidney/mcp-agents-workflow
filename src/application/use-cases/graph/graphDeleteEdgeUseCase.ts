@@ -40,6 +40,8 @@ export class GraphDeleteEdgeUseCase implements IGraphDeleteEdgeUseCase {
             };
         }
 
+        this.logger.info('Edge deleted', edge);
+
         return {
             success: true
         };

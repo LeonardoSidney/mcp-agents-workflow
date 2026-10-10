@@ -16,7 +16,7 @@ export class GraphGetNodesController implements IGraphGetNodesController {
     }
 
     async handle (params: GraphGetNodesControllerParams): Promise<GraphGetNodesControllerResponse> {
-        this.logger.info('Executing GraphGetNodesController::handle');
+        this.logger.info('Executing GraphGetNodesController::handle', params);
 
         const { graphId, type, status, limit } = params;
 
@@ -24,10 +24,14 @@ export class GraphGetNodesController implements IGraphGetNodesController {
 
         const nodes = response.nodes?.map(node => toNodeSummaryWithEdges(node));
 
-        return {
+        const result = {
             success: response.success,
             nodes,
             error: response.error
         };
+
+        this.logger.info('GraphGetNodesController::handle result', result);
+
+        return result;
     }
 }

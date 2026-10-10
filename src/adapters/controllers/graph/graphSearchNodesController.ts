@@ -19,17 +19,21 @@ export class GraphSearchNodesController implements IGraphSearchNodesController {
     }
 
     async handle (params: GraphSearchNodesControllerParams): Promise<GraphSearchNodesControllerResponse> {
-        this.logger.info('Executing GraphSearchNodesController::handle');
+        this.logger.info('Executing GraphSearchNodesController::handle', params);
 
         const { graphId, text, limit } = params;
 
         const response = await this.useCase.execute({ graphId, text, limit });
 
         if (!response.success || !response.results) {
-            return {
+            const result = {
                 success: false,
                 error: response.error
             };
+
+            this.logger.info('GraphSearchNodesController::handle result', result);
+
+            return result;
         }
 
         const results = response.results.map(result => ({
@@ -41,10 +45,14 @@ export class GraphSearchNodesController implements IGraphSearchNodesController {
             score: this.round(result.score)
         }));
 
-        return {
+        const result = {
             success: true,
             results
         };
+
+        this.logger.info('GraphSearchNodesController::handle result', result);
+
+        return result;
     }
 
     private round (value: number): number {

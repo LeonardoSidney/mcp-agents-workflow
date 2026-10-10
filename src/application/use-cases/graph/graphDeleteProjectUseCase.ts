@@ -24,6 +24,14 @@ export class GraphDeleteProjectUseCase implements IGraphDeleteProjectUseCase {
             };
         }
 
+        const project = await this.projectRepository.getProject({ id: params.id });
+        if (!project) {
+            return {
+                success: false,
+                error: `Project not found: ${params.id}`
+            };
+        }
+
         const deleted = await this.projectRepository.deleteProject({ id: params.id });
         if (!deleted) {
             return {
@@ -31,6 +39,8 @@ export class GraphDeleteProjectUseCase implements IGraphDeleteProjectUseCase {
                 error: `Project not found: ${params.id}`
             };
         }
+
+        this.logger.info('Project deleted', project);
 
         return {
             success: true

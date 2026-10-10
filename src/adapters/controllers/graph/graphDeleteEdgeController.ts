@@ -15,15 +15,19 @@ export class GraphDeleteEdgeController implements IGraphDeleteEdgeController {
     }
 
     async handle (params: GraphDeleteEdgeControllerParams): Promise<GraphDeleteEdgeControllerResponse> {
-        this.logger.info('Executing GraphDeleteEdgeController::handle');
+        this.logger.info('Executing GraphDeleteEdgeController::handle', params);
 
         const { id } = params;
 
         const response = await this.useCase.execute({ id });
 
-        return {
+        const result = {
             success: response.success,
             error: response.error
         };
+
+        this.logger.info('GraphDeleteEdgeController::handle result', result);
+
+        return result;
     }
 }

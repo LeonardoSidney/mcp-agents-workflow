@@ -51,6 +51,8 @@ export class GraphAddNodeUseCase implements IGraphAddNodeUseCase {
 
         await this.nodeRepository.addNode({ node: mapped.node });
 
+        this.logger.info('Node added', mapped.node);
+
         return {
             success: true,
             node: mapped.node

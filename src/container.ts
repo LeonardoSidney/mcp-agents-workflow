@@ -13,6 +13,7 @@ import { GraphAppendMemoController } from '@adapters/controllers/graph/graphAppe
 import { GraphUpdateEdgeController } from '@adapters/controllers/graph/graphUpdateEdgeController.ts';
 import { GraphUpdateNodeController } from '@adapters/controllers/graph/graphUpdateNodeController.ts';
 import { ConsoleLogger } from '@adapters/logger/consoleLogger.ts';
+import { NoopLogger } from '@adapters/logger/noopLogger.ts';
 import { EdgeRepository } from '@application/repository/edgeRepository.ts';
 import { MemoRepository } from '@application/repository/memoRepository.ts';
 import { NodeRepository } from '@application/repository/nodeRepository.ts';
@@ -38,10 +39,12 @@ import { GraphSearchNodesUseCase } from '@application/use-cases/graph/graphSearc
 import { GraphUpdateEdgeUseCase } from '@application/use-cases/graph/graphUpdateEdgeUseCase.ts';
 import { GraphUpdateNodeUseCase } from '@application/use-cases/graph/graphUpdateNodeUseCase.ts';
 import type { IDatabaseGateway } from '@domain/gateways/iDatabaseGateway.ts';
+import type { ILogger } from '@domain/logger.ts';
 import { bootDatabase } from './boot.ts';
 
 let databaseInstance: IDatabaseGateway | undefined;
-const logger = new ConsoleLogger();
+const isProduction = process.env['NODE_ENV'] === 'production';
+const logger: ILogger = isProduction ? new NoopLogger() : new ConsoleLogger();
 
 export async function database (): Promise<IDatabaseGateway> {
     if (databaseInstance !== undefined) {

@@ -15,15 +15,19 @@ export class GraphDeleteProjectController implements IGraphDeleteProjectControll
     }
 
     async handle (params: GraphDeleteProjectControllerParams): Promise<GraphDeleteProjectControllerResponse> {
-        this.logger.info('Executing GraphDeleteProjectController::handle');
+        this.logger.info('Executing GraphDeleteProjectController::handle', params);
 
         const { id } = params;
 
         const response = await this.useCase.execute({ id });
 
-        return {
+        const result = {
             success: response.success,
             error: response.error
         };
+
+        this.logger.info('GraphDeleteProjectController::handle result', result);
+
+        return result;
     }
 }

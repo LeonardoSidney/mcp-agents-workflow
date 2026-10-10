@@ -19,10 +19,14 @@ export class GraphGetProjectsController implements IGraphGetProjectsController {
 
         const response = await this.useCase.execute();
 
-        return {
+        const result = {
             success: response.success,
             projects: response.projects,
             error: response.error
         };
+
+        this.logger.info('GraphGetProjectsController::handle result', result);
+
+        return result;
     }
 }

@@ -15,16 +15,20 @@ export class GraphAddEdgeController implements IGraphAddEdgeController {
     }
 
     async handle (params: GraphAddEdgeControllerParams): Promise<GraphAddEdgeControllerResponse> {
-        this.logger.info('Executing GraphAddEdgeController::handle');
+        this.logger.info('Executing GraphAddEdgeController::handle', params);
 
         const { graphId, sourceId, targetId, type, description } = params;
 
         const response = await this.useCase.execute({ graphId, sourceId, targetId, type, description });
 
-        return {
+        const result = {
             success: response.success,
             edge: response.edge,
             error: response.error
         };
+
+        this.logger.info('GraphAddEdgeController::handle result', result);
+
+        return result;
     }
 }

@@ -85,6 +85,8 @@ export class GraphAddEdgeUseCase implements IGraphAddEdgeUseCase {
 
         await this.edgeRepository.addEdge({ edge: mapped.edge });
 
+        this.logger.info('Edge added', mapped.edge);
+
         return {
             success: true,
             edge: mapped.edge

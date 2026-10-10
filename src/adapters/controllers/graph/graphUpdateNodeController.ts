@@ -16,7 +16,7 @@ export class GraphUpdateNodeController implements IGraphUpdateNodeController {
     }
 
     async handle (params: GraphUpdateNodeControllerParams): Promise<GraphUpdateNodeControllerResponse> {
-        this.logger.info('Executing GraphUpdateNodeController::handle');
+        this.logger.info('Executing GraphUpdateNodeController::handle', params);
 
         const { id, title, description, status } = params;
 
@@ -24,10 +24,14 @@ export class GraphUpdateNodeController implements IGraphUpdateNodeController {
 
         const node = response.node ? toNodeSummary(response.node) : undefined;
 
-        return {
+        const result = {
             success: response.success,
             node,
             error: response.error
         };
+
+        this.logger.info('GraphUpdateNodeController::handle result', result);
+
+        return result;
     }
 }

@@ -55,6 +55,8 @@ export class GraphDeleteNodeUseCase implements IGraphDeleteNodeUseCase {
             };
         }
 
+        this.logger.info('Node deleted', node);
+
         return {
             success: true
         };

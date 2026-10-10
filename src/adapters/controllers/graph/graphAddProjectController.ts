@@ -15,16 +15,20 @@ export class GraphAddController implements IGraphAddController {
     }
 
     async handle (params: GraphAddControllerParams): Promise<GraphAddControllerResponse> {
-        this.logger.info('Executing GraphAddController::handle');
+        this.logger.info('Executing GraphAddController::handle', params);
 
         const { name, description } = params;
 
         const response = await this.useCase.execute({ name, description });
 
-        return {
+        const result = {
             success: response.success,
             project: response.project,
             error: response.error
         };
+
+        this.logger.info('GraphAddController::handle result', result);
+
+        return result;
     }
 }

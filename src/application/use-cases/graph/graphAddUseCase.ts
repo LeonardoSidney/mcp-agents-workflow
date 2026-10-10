@@ -54,6 +54,8 @@ export class GraphAddUseCase implements IGraphAddUseCase {
 
         await this.projectRepository.addProject({ project });
 
+        this.logger.info('Project added', project);
+
         return {
             success: true,
             project

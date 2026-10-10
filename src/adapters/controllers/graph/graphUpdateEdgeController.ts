@@ -15,16 +15,20 @@ export class GraphUpdateEdgeController implements IGraphUpdateEdgeController {
     }
 
     async handle (params: GraphUpdateEdgeControllerParams): Promise<GraphUpdateEdgeControllerResponse> {
-        this.logger.info('Executing GraphUpdateEdgeController::handle');
+        this.logger.info('Executing GraphUpdateEdgeController::handle', params);
 
         const { id, type, description } = params;
 
         const response = await this.useCase.execute({ id, type, description });
 
-        return {
+        const result = {
             success: response.success,
             edge: response.edge,
             error: response.error
         };
+
+        this.logger.info('GraphUpdateEdgeController::handle result', result);
+
+        return result;
     }
 }

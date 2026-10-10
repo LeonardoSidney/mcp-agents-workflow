@@ -15,16 +15,20 @@ export class GraphGetProjectController implements IGraphGetProjectController {
     }
 
     async handle (params: GraphGetProjectControllerParams): Promise<GraphGetProjectControllerResponse> {
-        this.logger.info('Executing GraphGetProjectController::handle');
+        this.logger.info('Executing GraphGetProjectController::handle', params);
 
         const { id, name } = params;
 
         const response = await this.useCase.execute({ id, name });
 
-        return {
+        const result = {
             success: response.success,
             project: response.project,
             error: response.error
         };
+
+        this.logger.info('GraphGetProjectController::handle result', result);
+
+        return result;
     }
 }
