@@ -117,10 +117,10 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-search-nodes',
         {
-            description: 'Search the nodes of a graph (project) by text across title, description, and memories recorded on the node outgoing edges and memos appended to the node, ranked by similarity. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); connectivities match almost everything, so keep the query short or cap the result count with limit. Each hit carries the full text of the single best-matching memo of the node as bestMemo (omitted when no memo matches); the rest of the discussion of a node is read with graph-get-node.',
+            description: 'Search the nodes of a graph (project) by text across title, description, and memories recorded on the node outgoing edges and memos appended to the node, ranked by similarity. Tokens are conjunctive (AND): a node is returned only when its searchable text (title, description, memos and outgoing edge descriptions combined) contains every token of the query, so more tokens make the search stricter. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); a token absent from a node disqualifies it, so keep the query short or cap the result count with limit. Each hit carries the full text of the single best-matching memo of the node as bestMemo (omitted when no memo matches); the rest of the discussion of a node is read with graph-get-node.',
             inputSchema: z.object({
                 graphId: objectId.describe('Graph (project) id whose nodes should be searched (24-hex ObjectId)'),
-                text: z.string().min(1).describe('Text to match across title, description, and memories (outgoing edge descriptions), as short meaningful tokens'),
+                text: z.string().min(1).describe('Text to match across title, description, and memories (outgoing edge descriptions) as short meaningful tokens; tokens are ANDed together, so a node is only returned when it contains every token'),
                 limit: z.number().int().positive().optional().describe('Maximum number of results to return (omit for no limit)')
             })
         },

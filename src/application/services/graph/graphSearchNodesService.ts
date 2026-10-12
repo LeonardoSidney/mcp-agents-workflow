@@ -1,5 +1,6 @@
 import type { EdgeReference } from '@domain/entities/edge.ts';
 import type { Memo, MemoMatch } from '@domain/entities/memo.ts';
+import type { NodeWithMemos } from '@domain/entities/node.ts';
 import type { GraphSearchNodesServiceParams, GraphSearchNodesServiceResponse, IGraphSearchNodesService, NodeSearchResult } from '@domain/services/iGraphSearchNodesService.ts';
 
 export class GraphSearchNodesService implements IGraphSearchNodesService {
@@ -15,6 +16,10 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
         const results: NodeSearchResult[] = [];
 
         for (const node of params.nodes) {
+            if (!this.nodeMatchesAllTokens(node, queryTokens)) {
+                continue;
+            }
+
             const titleScore = this.fieldScore(queryTokens, node.title);
             const descriptionScore = this.fieldScore(queryTokens, node.description);
             const bestMemo = this.bestMatchingMemo(queryTokens, node.memos);
@@ -24,10 +29,6 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
                 memoScore = bestMemo.score;
             }
             const memoryScore = Math.max(edgeScore, memoScore);
-
-            if (titleScore === 0 && descriptionScore === 0 && memoryScore === 0) {
-                continue;
-            }
 
             results.push({
                 node,
@@ -43,6 +44,36 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
             success: true,
             results
         };
+    }
+
+    private nodeMatchesAllTokens (node: NodeWithMemos, queryTokens: string[]): boolean {
+        const surfaceTokens = new Set<string>();
+
+        for (const token of this.toTokens(node.title)) {
+            surfaceTokens.add(token);
+        }
+
+        for (const token of this.toTokens(node.description)) {
+            surfaceTokens.add(token);
+        }
+
+        for (const memo of node.memos) {
+            for (const token of this.toTokens(memo.text)) {
+                surfaceTokens.add(token);
+            }
+        }
+
+        for (const edge of node.edges) {
+            if (!edge.description) {
+                continue;
+            }
+
+            for (const token of this.toTokens(edge.description)) {
+                surfaceTokens.add(token);
+            }
+        }
+
+        return queryTokens.every(token => surfaceTokens.has(token));
     }
 
     private bestEdgeScore (queryTokens: string[], edges: EdgeReference[]): number {

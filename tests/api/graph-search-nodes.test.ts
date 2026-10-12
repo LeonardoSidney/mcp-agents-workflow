@@ -28,6 +28,19 @@ describe('MCP server - graph-search-nodes', () => {
         expect(results[2]).toMatchObject({ titleScore: 0.5, descriptionScore: 0, memoryScore: 0, score: 0.17 });
     });
 
+    test('returns only nodes that contain every query token (conjunctive AND)', async () => {
+        const graph = await addProject('Conjunctive Search Project', 'Project used to verify AND token semantics');
+        const partial = await addNode(graph.id, 'TASK', 'Invoice report', 'Only some of the query words');
+        const complete = await addNode(graph.id, 'TASK', 'Meal benefit', 'Invoice report monthly cycle');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'invoice report monthly' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([complete.id]);
+        expect(results.map(hit => hit.node.id)).not.toContain(partial.id);
+    });
+
     test('indexes the memory of a node outgoing edges in search', async () => {
         const graph = await addProject('Memory Search Project', 'Project used to search edge memories');
         const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');

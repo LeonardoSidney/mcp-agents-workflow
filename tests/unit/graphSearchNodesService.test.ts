@@ -40,11 +40,35 @@ describe('GraphSearchNodesService', () => {
         }
     });
 
-    test('drops candidate nodes that do not match any field', () => {
+    test('drops candidate nodes that do not contain every query token', () => {
         const matched = buildNode({ id: 'n1', title: 'Invoice report', description: '' });
         const unmatched = buildNode({ id: 'n2', title: 'Other task', description: 'Nothing to match here' });
 
         const response = service.scoreNodes({ text: 'invoice', nodes: [matched, unmatched] });
+
+        const results = expectScored(response);
+        expect(results.map(result => result.node.id)).toEqual(['n1']);
+    });
+
+    test('drops a node that matches some, but not every, query token', () => {
+        const partial = buildNode({ id: 'n1', title: 'Invoice report', description: '' });
+        const complete = buildNode({ id: 'n2', title: 'Meal benefit', description: 'Invoice report monthly cycle' });
+
+        const response = service.scoreNodes({ text: 'invoice report monthly', nodes: [partial, complete] });
+
+        const results = expectScored(response);
+        expect(results.map(result => result.node.id)).toEqual(['n2']);
+    });
+
+    test('keeps a node that spreads the query tokens across different fields', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Invoice',
+            description: '',
+            memos: [{ id: 'm1', nodeId: 'n1', author: 'agent', text: 'Report monthly review', createdAt: now }]
+        });
+
+        const response = service.scoreNodes({ text: 'invoice report monthly', nodes: [node] });
 
         const results = expectScored(response);
         expect(results.map(result => result.node.id)).toEqual(['n1']);
