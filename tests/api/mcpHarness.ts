@@ -1,8 +1,9 @@
 import { Client, InMemoryTransport, type CallToolResult, type Tool } from '@modelcontextprotocol/client';
 import { MongoClient, type Collection } from 'mongodb';
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { NodeSummary } from '@domain/entities/node.ts';
+import type { NodeSummary, NodeWithMemos } from '@domain/entities/node.ts';
 import type { Edge } from '@domain/entities/edge.ts';
+import type { EdgeType } from '@domain/constants/edge-types.ts';
 import type { Memo } from '@domain/entities/memo.ts';
 import type { Project } from '@domain/entities/project.ts';
 import type { RawEdgeDocument, RawMemoDocument, RawNodeDocument, RawProjectDocument } from '@adapters/gateways/mongoDbGateway.ts';
@@ -10,7 +11,7 @@ import { shutdownDatabase } from '@src/boot.ts';
 import { createServer } from '@src/mcpServer.ts';
 
 const MONGODB_URI = 'mongodb://127.0.0.1:27017/mcp-agents-workflow-test';
-const OBJECT_ID_REGEX = /^[0-9a-f]{24}$/i;
+const OBJECT_ID_REGEX = /[0-9a-f]{24}/i;
 
 export function mcpTestHarness () {
     const mongoClient = new MongoClient(MONGODB_URI);
@@ -76,6 +77,15 @@ export function mcpTestHarness () {
             .join('');
     }
 
+    function idOf (result: CallToolResult): string {
+        const match = textOf(result).match(OBJECT_ID_REGEX);
+        if (!match) {
+            throw new Error(`No 24-hex ObjectId in tool response: ${textOf(result)}`);
+        }
+
+        return match[0];
+    }
+
     function instructions (): string {
         const advertised = client?.getInstructions();
         if (!advertised) {
@@ -101,13 +111,15 @@ export function mcpTestHarness () {
             throw new Error(`graph-add failed: ${message}`);
         }
 
-        const jsonStart = textOf(result).indexOf('{');
-        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as Project;
-        if (!parsed.id.match(OBJECT_ID_REGEX)) {
-            throw new Error(`graph-add did not return a 24-hex ObjectId: ${parsed.id}`);
+        const id = idOf(result);
+        const fetched = await callTool('graph-get-project', { id });
+
+        if (fetched.isError) {
+            const message = textOf(fetched);
+            throw new Error(`graph-get-project after graph-add failed: ${message}`);
         }
 
-        return parsed;
+        return JSON.parse(textOf(fetched)) as Project;
     }
 
     async function addNode (
@@ -129,13 +141,15 @@ export function mcpTestHarness () {
             throw new Error(`graph-add-node failed: ${message}`);
         }
 
-        const jsonStart = textOf(result).indexOf('{');
-        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as NodeSummary;
-        if (!parsed.id.match(OBJECT_ID_REGEX)) {
-            throw new Error(`graph-add-node did not return a 24-hex ObjectId: ${parsed.id}`);
+        const id = idOf(result);
+        const fetched = await callTool('graph-get-node', { id });
+
+        if (fetched.isError) {
+            const message = textOf(fetched);
+            throw new Error(`graph-get-node after graph-add-node failed: ${message}`);
         }
 
-        return parsed;
+        return JSON.parse(textOf(fetched)) as NodeSummary;
     }
 
     async function addEdge (
@@ -158,13 +172,19 @@ export function mcpTestHarness () {
             throw new Error(`graph-add-edge failed: ${message}`);
         }
 
-        const jsonStart = textOf(result).indexOf('{');
-        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as Edge;
-        if (!parsed.id.match(OBJECT_ID_REGEX)) {
-            throw new Error(`graph-add-edge did not return a 24-hex ObjectId: ${parsed.id}`);
+        const edge: Edge = {
+            id: idOf(result),
+            graphId,
+            sourceId,
+            targetId,
+            type: type as EdgeType
+        };
+
+        if (description !== undefined) {
+            edge.description = description;
         }
 
-        return parsed;
+        return edge;
     }
 
     async function fetchProject (id: string): Promise<CallToolResult> {
@@ -183,13 +203,21 @@ export function mcpTestHarness () {
             throw new Error(`graph-append-memo failed: ${message}`);
         }
 
-        const jsonStart = textOf(result).indexOf('{');
-        const parsed = JSON.parse(textOf(result).slice(jsonStart)) as Memo;
-        if (!parsed.id.match(OBJECT_ID_REGEX)) {
-            throw new Error(`graph-append-memo did not return a 24-hex ObjectId: ${parsed.id}`);
+        const id = idOf(result);
+        const fetched = await callTool('graph-get-node', { id: nodeId });
+
+        if (fetched.isError) {
+            const message = textOf(fetched);
+            throw new Error(`graph-get-node after graph-append-memo failed: ${message}`);
         }
 
-        return parsed;
+        const node = JSON.parse(textOf(fetched)) as NodeWithMemos;
+        const memo = node.memos.find(candidate => candidate.id === id);
+        if (!memo) {
+            throw new Error(`graph-get-node did not return the appended memo: ${id}`);
+        }
+
+        return memo;
     }
 
     return {

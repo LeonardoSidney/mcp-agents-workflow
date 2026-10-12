@@ -16,8 +16,11 @@ describe('MCP server - graph-update-node', () => {
         });
 
         expect(result.isError).toBeFalsy();
-        const jsonStart = textOf(result).indexOf('{');
-        const updated = JSON.parse(textOf(result).slice(jsonStart)) as NodeWithMemos;
+
+        const fetched = await fetchNode(node.id);
+        expect(fetched.isError).toBeFalsy();
+
+        const updated = JSON.parse(textOf(fetched)) as NodeWithMemos;
         expect(updated).toMatchObject({
             id: node.id,
             graphId: graph.id,

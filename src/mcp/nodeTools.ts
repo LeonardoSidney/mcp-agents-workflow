@@ -28,7 +28,7 @@ export function registerNodeTools (server: McpServer): void {
             const response = await controller.handle({ graphId, type, title, description, status });
 
             const text = response.success && response.node
-                ? `Node created successfully.\n${JSON.stringify(response.node, null, 4)}`
+                ? `Node created successfully: ${response.node.id}`
                 : `Failed to add node: ${response.error ?? 'Unknown error'}`;
 
             return {
@@ -55,7 +55,7 @@ export function registerNodeTools (server: McpServer): void {
             const memo = response.memo;
 
             const output = response.success && memo
-                ? `Memo appended successfully.\n${JSON.stringify(memo, null, 4)}`
+                ? `Memo appended successfully: ${memo.id}`
                 : `Failed to append memo: ${response.error ?? 'Unknown error'}`;
 
             return {
@@ -155,7 +155,7 @@ export function registerNodeTools (server: McpServer): void {
             const response = await controller.handle({ id, title, description, status });
 
             const text = response.success && response.node
-                ? `Node updated successfully.\n${JSON.stringify(response.node, null, 4)}`
+                ? `Node updated successfully: ${response.node.id}`
                 : `Failed to update node: ${response.error ?? 'Unknown error'}`;
 
             return {

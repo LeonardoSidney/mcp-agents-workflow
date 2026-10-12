@@ -24,7 +24,7 @@ export function registerEdgeTools (server: McpServer): void {
             const response = await controller.handle({ graphId, sourceId, targetId, type, description });
 
             const text = response.success && response.edge
-                ? `Edge created successfully.\n${JSON.stringify(response.edge, null, 4)}`
+                ? `Edge created successfully: ${response.edge.id}`
                 : `Failed to add edge: ${response.error ?? 'Unknown error'}`;
 
             return {
@@ -49,7 +49,7 @@ export function registerEdgeTools (server: McpServer): void {
             const response = await controller.handle({ id, type, description });
 
             const text = response.success && response.edge
-                ? `Edge updated successfully.\n${JSON.stringify(response.edge, null, 4)}`
+                ? `Edge updated successfully: ${response.edge.id}`
                 : `Failed to update edge: ${response.error ?? 'Unknown error'}`;
 
             return {

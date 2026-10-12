@@ -7,8 +7,7 @@ import { objectId } from './objectIdSchema.ts';
 
 function controllerResponseToText (response: GraphAddControllerResponse): string {
     if (response.success && response.project) {
-        const { project } = response;
-        return `Project created successfully.\n${JSON.stringify(project, null, 4)}`;
+        return `Project created successfully: ${response.project.id}`;
     }
 
     return `Failed to create project: ${response.error ?? 'Unknown error'}`;

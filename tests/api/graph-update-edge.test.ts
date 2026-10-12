@@ -1,4 +1,3 @@
-import type { Edge } from '@domain/entities/edge.ts';
 import type { NodeWithMemos } from '@domain/entities/node.ts';
 import { ObjectId } from 'mongodb';
 import { mcpTestHarness } from './mcpHarness.ts';
@@ -16,8 +15,16 @@ describe('MCP server - graph-update-edge', () => {
 
         expect(result.isError).toBeFalsy();
 
-        const parsed = JSON.parse(textOf(result).slice(textOf(result).indexOf('{'))) as Edge;
-        expect(parsed).toMatchObject({ id: edge.id, type: 'PART_OF', description: 'Refined memory' });
+        const fetched = await fetchNode(source.id);
+        expect(fetched.isError).toBeFalsy();
+
+        const sourceNode = JSON.parse(textOf(fetched)) as NodeWithMemos;
+        const updated = sourceNode.edges.find(edgeItem => edgeItem.id === edge.id);
+        if (!updated) {
+            throw new Error(`Expected the updated edge on the source node: ${edge.id}`);
+        }
+
+        expect(updated).toMatchObject({ id: edge.id, type: 'PART_OF', description: 'Refined memory' });
 
         const stored = await edgesCollection.find({ _id: new ObjectId(edge.id) }).toArray();
         expect(stored[0]).toMatchObject({ type: 'PART_OF', description: 'Refined memory' });
@@ -33,8 +40,16 @@ describe('MCP server - graph-update-edge', () => {
 
         expect(result.isError).toBeFalsy();
 
-        const parsed = JSON.parse(textOf(result).slice(textOf(result).indexOf('{'))) as Edge;
-        expect(parsed).toMatchObject({ id: edge.id, type: 'RELATED_TO', description: 'Memory that must survive' });
+        const fetched = await fetchNode(source.id);
+        expect(fetched.isError).toBeFalsy();
+
+        const sourceNode = JSON.parse(textOf(fetched)) as NodeWithMemos;
+        const updated = sourceNode.edges.find(edgeItem => edgeItem.id === edge.id);
+        if (!updated) {
+            throw new Error(`Expected the updated edge on the source node: ${edge.id}`);
+        }
+
+        expect(updated).toMatchObject({ id: edge.id, type: 'RELATED_TO', description: 'Memory that must survive' });
 
         const stored = await edgesCollection.find({ _id: new ObjectId(edge.id) }).toArray();
         expect(stored[0]).toMatchObject({ type: 'RELATED_TO', description: 'Memory that must survive' });
