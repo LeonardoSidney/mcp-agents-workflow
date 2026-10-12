@@ -44,10 +44,10 @@ describe('MCP server - graph-delete-node', () => {
         const secondDelete = await callTool('graph-delete-node', { id: task.id });
         expect(secondDelete.isError).toBeFalsy();
 
-        const remainingEdges = await edgesCollection.find({}).toArray();
+        const remainingEdges = await edgesCollection.find({ deleted_at: { $exists: false } }).toArray();
         expect(remainingEdges).toHaveLength(0);
 
-        const remainingNodes = await nodesCollection.find({}).toArray();
+        const remainingNodes = await nodesCollection.find({ deleted_at: { $exists: false } }).toArray();
         expect(remainingNodes).toHaveLength(1);
         const remaining = remainingNodes[0];
         if (!remaining) {
@@ -72,14 +72,14 @@ describe('MCP server - graph-delete-node', () => {
         const secondDelete = await callTool('graph-delete-node', { id: goal.id });
         expect(secondDelete.isError).toBeFalsy();
 
-        const remainingNodes = await nodesCollection.find({}).toArray();
+        const remainingNodes = await nodesCollection.find({ deleted_at: { $exists: false } }).toArray();
         expect(remainingNodes).toHaveLength(0);
 
-        const remainingEdges = await edgesCollection.find({}).toArray();
+        const remainingEdges = await edgesCollection.find({ deleted_at: { $exists: false } }).toArray();
         expect(remainingEdges).toHaveLength(0);
     });
 
-    test('deleting a node removes its memos from the memos collection', async () => {
+    test('deleting a node deletes its memos', async () => {
         const graph = await addProject('Memo Delete Project', 'Project used to delete a node with memos');
         const node = await addNode(graph.id, 'TASK', 'Doomed task', 'Task that will be deleted with its memos');
         await addMemo(node.id, 'user', 'A discussion that dies with the node');
@@ -87,10 +87,10 @@ describe('MCP server - graph-delete-node', () => {
         const deleteResult = await callTool('graph-delete-node', { id: node.id });
         expect(deleteResult.isError).toBeFalsy();
 
-        const remainingMemos = await memosCollection.find({}).toArray();
+        const remainingMemos = await memosCollection.find({ deleted_at: { $exists: false } }).toArray();
         expect(remainingMemos).toHaveLength(0);
 
-        const remainingNodes = await nodesCollection.find({}).toArray();
+        const remainingNodes = await nodesCollection.find({ deleted_at: { $exists: false } }).toArray();
         expect(remainingNodes).toHaveLength(0);
     });
 });

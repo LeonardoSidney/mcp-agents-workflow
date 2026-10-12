@@ -7,9 +7,11 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "migrate:objectid": "tsx migration/scripts/migrate-objectid.ts",
+    "migrate:ref-objectid": "tsx migration/scripts/migrate-ref-objectid.ts",
     "seed": "tsx scripts/seed.ts",
-    "test": "jest tests/unit",
+    "test": "npm run test:unit && npm run test:api",
     "test:api": "jest tests/api",
+    "test:unit": "jest tests/unit",
     "test:coverage": "jest --coverage tests/unit"
   },
   "keywords": [],

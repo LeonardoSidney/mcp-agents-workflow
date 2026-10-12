@@ -9,15 +9,17 @@ describe('MCP server instructions', () => {
 
         for (const anchor of [
             'shared working memory',
-            'One project per workspace, named after the workspace',
-            'Before starting any task',
-            'graph-get-projects',
-            'graph-search-nodes',
-            'graph-get-node',
-            'graph-append-memo',
-            'SOLVED_BY',
+            'Never assume that knowledge from a previous session is unavailable',
+            'Mandatory bootstrap',
+            'Register the current user request',
+            'graph - get - project',
+            'graph - search - nodes',
+            'graph - get - node',
+            'append a memo',
+            'Memos are append-only',
+            'TASK → SOLUTION',
             'in_progress',
-            'CONSTRAINED_BY'
+            'Cross-task learning'
         ]) {
             expect(text).toContain(anchor);
         }

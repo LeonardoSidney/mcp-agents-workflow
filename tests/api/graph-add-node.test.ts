@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import { mcpTestHarness } from './mcpHarness.ts';
 
 const { addNode, addProject, callTool, nodesCollection, textOf } = mcpTestHarness();
@@ -13,7 +14,7 @@ describe('MCP server - graph-add-node', () => {
         const saved = await nodesCollection.find({}).toArray();
         expect(saved).toHaveLength(1);
         expect(saved[0]).toMatchObject({
-            graph_id: graph.id,
+            graph_id: new ObjectId(graph.id),
             type: 'GOAL',
             title: 'Ship the workflow',
             status: 'pending'

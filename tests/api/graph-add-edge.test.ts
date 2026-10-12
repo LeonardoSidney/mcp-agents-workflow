@@ -20,9 +20,9 @@ describe('MCP server - graph-add-edge', () => {
         expect(stored).toHaveLength(1);
         expect(stored[0]).toMatchObject({
             _id: new ObjectId(edge.id),
-            graph_id: graph.id,
-            source_id: source.id,
-            target_id: target.id,
+            graph_id: new ObjectId(graph.id),
+            source_id: new ObjectId(source.id),
+            target_id: new ObjectId(target.id),
             type: 'PART_OF',
             description: 'Part of the main goal'
         });
@@ -46,7 +46,7 @@ describe('MCP server - graph-add-edge', () => {
         expect(storedTask).not.toHaveProperty('links');
         expect(storedTask).not.toHaveProperty('edges');
 
-        const edgeDocuments = await edgesCollection.find({ source_id: task.id }).toArray();
+        const edgeDocuments = await edgesCollection.find({ source_id: new ObjectId(task.id) }).toArray();
         expect(edgeDocuments).toHaveLength(1);
         const edgeDocument = edgeDocuments[0];
         if (!edgeDocument?._id) {
@@ -54,7 +54,7 @@ describe('MCP server - graph-add-edge', () => {
         }
 
         expect(edgeDocument._id.toHexString()).toEqual(edge.id);
-        expect(edgeDocument).toMatchObject({ type: 'PART_OF', target_id: goal.id, graph_id: graph.id });
+        expect(edgeDocument).toMatchObject({ type: 'PART_OF', target_id: new ObjectId(goal.id), graph_id: new ObjectId(graph.id) });
 
         const fetched = await fetchNode(task.id);
         expect(fetched.isError).toBeFalsy();
@@ -76,7 +76,7 @@ describe('MCP server - graph-add-edge', () => {
         expect(first.description).toEqual('First memory');
         expect(second.description).toEqual('Second memory');
 
-        const stored = await edgesCollection.find({ source_id: task.id }).toArray();
+        const stored = await edgesCollection.find({ source_id: new ObjectId(task.id) }).toArray();
         expect(stored).toHaveLength(2);
         expect(stored.map(edge => edge.description).sort()).toEqual(['First memory', 'Second memory']);
     });

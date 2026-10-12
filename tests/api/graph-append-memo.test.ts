@@ -1,4 +1,5 @@
 import type { NodeWithMemos } from '@domain/entities/node.ts';
+import { ObjectId } from 'mongodb';
 import { mcpTestHarness } from './mcpHarness.ts';
 
 const { addMemo, addNode, addProject, callTool, fetchNode, memosCollection, textOf } = mcpTestHarness();
@@ -18,7 +19,7 @@ describe('MCP server - graph-append-memo', () => {
         const saved = await memosCollection.find({}).toArray();
         expect(saved).toHaveLength(1);
         expect(saved[0]).toMatchObject({
-            node_id: node.id,
+            node_id: new ObjectId(node.id),
             author: 'agent',
             text: 'Stuck: the discount rule is not applied when the total is negative'
         });

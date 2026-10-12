@@ -13,7 +13,7 @@ describe('MCP server - graph-delete-edge', () => {
         const result = await callTool('graph-delete-edge', { id: edge.id });
         expect(result.isError).toBeFalsy();
 
-        const storedEdges = await edgesCollection.find({}).toArray();
+        const storedEdges = await edgesCollection.find({ deleted_at: { $exists: false } }).toArray();
         expect(storedEdges).toHaveLength(0);
 
         const storedNodes = await nodesCollection.find({}).toArray();
