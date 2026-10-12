@@ -206,10 +206,20 @@ Any MCP-compatible client works (Claude Desktop, VS Code Copilot, Cursor, or pro
 The project ships unit and API test suites (Jest).
 
 ```bash
-npm test              # unit tests
-npm run test:api      # API tests (exercise the full MCP surface through a real client)
+npm test              # unit + API tests (API tests need MongoDB on 127.0.0.1:27017)
+npm run test:api      # API tests only (exercise the full MCP surface through a real client)
 npm run test:coverage # unit tests with coverage report
 ```
+
+### Pre-commit hook
+
+Commits are gated on the validation flow: the pre-commit hook runs `npm run lint` and `npm test` and aborts the commit if either fails. Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+`npm test` includes the API suite, so a MongoDB on `127.0.0.1:27017` must be running (e.g. `docker compose up -d mongo`).
 
 ---
 

@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# pre-commit: gate `git commit` on the project validation flow.
+# Runs `npm run lint` and `npm test`; aborts the commit if either fails.
+# Enable once per clone with: git config core.hooksPath .githooks
+
+set -u
+
+if [ ! -d node_modules ]; then
+    echo "pre-commit: node_modules is missing - run 'npm ci' first." >&2
+    exit 1
+fi
+
+echo "pre-commit: npm run lint"
+if ! npm run lint; then
+    echo "pre-commit: lint failed - commit blocked." >&2
+    exit 1
+fi
+
+echo "pre-commit: npm test"
+if ! npm test; then
+    echo "pre-commit: tests failed - commit blocked." >&2
+    exit 1
+fi
+
+exit 0
