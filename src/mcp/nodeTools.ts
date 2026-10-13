@@ -68,7 +68,7 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-get-nodes',
         {
-            description: 'List the nodes of a graph (project), ordered by the most recently updated first, optionally filtered by type and status and capped by a limit. Returns node and outgoing edge descriptions only - never memo text; read the discussion of a node with graph-get-node',
+            description: 'List the nodes of a graph (project), ordered by the most recently updated first, optionally filtered by type and status and capped by a limit. Returns node and outgoing edge descriptions only - never memo text; read the discussion of a node with graph-get-node. Outgoing edges are self-describing: each edge carries the target node title, so the list is legible without extra fetches',
             inputSchema: z.object({
                 graphId: objectId.describe('Graph (project) id whose nodes should be listed (24-hex ObjectId)'),
                 type: z.enum(NODE_TYPE_VALUES).optional().describe('Only return nodes of this type (omit for all types)'),
@@ -94,7 +94,7 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-get-node',
         {
-            description: 'Fetch a single node from the agent workflow graph by id (24-hex ObjectId)',
+            description: 'Fetch a single node from the agent workflow graph by id (24-hex ObjectId). Outgoing edges are self-describing: each edge carries the target node title',
             inputSchema: z.object({
                 id: objectId.describe('Node id (24-hex ObjectId)')
             })
@@ -117,7 +117,7 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-search-nodes',
         {
-            description: 'Search the nodes of a graph (project) by text across title, description, and memories recorded on the node outgoing edges and memos appended to the node, ranked by similarity. Tokens are conjunctive (AND): a node is returned only when its searchable text (title, description, memos and outgoing edge descriptions combined) contains every token of the query, so more tokens make the search stricter. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); a token absent from a node disqualifies it, so keep the query short or cap the result count with limit. Each hit carries the full text of the single best-matching memo of the node as bestMemo (omitted when no memo matches); the rest of the discussion of a node is read with graph-get-node.',
+            description: 'Search the nodes of a graph (project) by text across title, description, and memories recorded on the node outgoing edges and memos appended to the node, ranked by similarity. Tokens are conjunctive (AND): a node is returned only when its searchable text (title, description, memos and outgoing edge descriptions combined) contains every token of the query, so more tokens make the search stricter. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); a token absent from a node disqualifies it, so keep the query short or cap the result count with limit. Each hit carries the full text of the single best-matching memo of the node as bestMemo (omitted when no memo matches); the rest of the discussion of a node is read with graph-get-node. The outgoing edges of a hit are self-describing: each edge carries the target node title.',
             inputSchema: z.object({
                 graphId: objectId.describe('Graph (project) id whose nodes should be searched (24-hex ObjectId)'),
                 text: z.string().min(1).describe('Text to match across title, description, and memories (outgoing edge descriptions) as short meaningful tokens; tokens are ANDed together, so a node is only returned when it contains every token'),

@@ -63,7 +63,7 @@ For each nontrivial task:
 
 1. Search for the problem, relevant technologies, domain concepts, and important constraints.
 2. Inspect promising nodes with \`graph - get - node\`.
-3. Follow relevant outgoing edges to discover related solutions, decisions, and rules.
+3. Follow relevant outgoing edges to discover related solutions, decisions, and rules. Edges are self-describing: each edge carries the target node title, so judge relevance from the edge type, target title and description before fetching the target.
 4. Read the target nodes and their memos.
 5. Identify what was attempted, what failed, what worked, why it worked, and under which conditions.
 6. Determine whether the previous solution applies to the current context.

@@ -11,6 +11,7 @@ import type {
     ListEdgeGatewayParams,
     ListNodeGatewayParams,
     ListNodesGatewayParams,
+    ListNodesByIdsGatewayParams,
     ListGraphGatewayParams,
     ListGraphByNameGatewayParams,
     ListEdgesBySourceGatewayParams,
@@ -175,6 +176,16 @@ export class MongoDBGateway implements IDatabaseGateway {
             : await cursor.toArray();
 
         return rawDocuments.map(document => this.fromRawNode(document));
+    }
+
+    async listNodesByIds (params: ListNodesByIdsGatewayParams): Promise<NodeDocument[]> {
+        const collection = this.client.db().collection<RawNodeDocument>('nodes');
+
+        const documents = await collection
+            .find({ graph_id: new ObjectId(params.graphId), _id: { $in: params.ids.map(id => new ObjectId(id)) }, deleted_at: { $exists: false } })
+            .toArray();
+
+        return documents.map(document => this.fromRawNode(document));
     }
 
     async deleteNode (params: DeleteNodeGatewayParams): Promise<boolean> {

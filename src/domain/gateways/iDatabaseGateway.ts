@@ -11,6 +11,7 @@ export interface IDatabaseGateway {
     updateNode (params: UpdateNodeGatewayParams): Promise<boolean>;
     listNode (params: ListNodeGatewayParams): Promise<NodeDocument | null>;
     listNodes (params: ListNodesGatewayParams): Promise<NodeDocument[]>;
+    listNodesByIds (params: ListNodesByIdsGatewayParams): Promise<NodeDocument[]>;
     deleteNode (params: DeleteNodeGatewayParams): Promise<boolean>;
     addEdge (params: AddEdgeGatewayParams): Promise<void>;
     updateEdge (params: UpdateEdgeGatewayParams): Promise<boolean>;
@@ -56,6 +57,11 @@ export type ListNodesGatewayParams = {
     type?: NodeType;
     status?: NodeStatus;
     limit?: number;
+};
+
+export type ListNodesByIdsGatewayParams = {
+    graphId: string;
+    ids: string[];
 };
 
 export type DeleteNodeGatewayParams = {

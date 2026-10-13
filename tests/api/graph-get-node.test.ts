@@ -52,8 +52,26 @@ describe('MCP server - graph-get-node', () => {
         expect(stored.edges[0]).toMatchObject({
             type: 'CONSTRAINED_BY',
             targetId: rule.id,
+            targetTitle: 'Reimbursement rule',
             description: 'The daily limit rule applies because the report covers travel days'
         });
+    });
+
+    test('makes outgoing edges self-describing with each target node title', async () => {
+        const graph = await addProject('Edge Title Project', 'Project used to check edge target titles');
+        const rule = await addNode(graph.id, 'CONSTRAINT', 'Standing constraint', 'A rule that applies to the task');
+        const solution = await addNode(graph.id, 'SOLUTION', 'Proven solution', 'An approach that resolved the task');
+        const task = await addNode(graph.id, 'TASK', 'Working task', 'Task pointing at multiple targets');
+        await addEdge(graph.id, task.id, rule.id, 'CONSTRAINED_BY', 'The standing rule applies to the task');
+        await addEdge(graph.id, task.id, solution.id, 'SOLVED_BY', 'The task was resolved by the proven approach');
+
+        const fetched = await fetchNode(task.id);
+        expect(fetched.isError).toBeFalsy();
+
+        const stored = JSON.parse(textOf(fetched)) as NodeWithMemos;
+        expect(stored.edges).toHaveLength(2);
+        expect(stored.edges.filter(edge => edge.targetId === rule.id)[0]).toMatchObject({ targetTitle: 'Standing constraint' });
+        expect(stored.edges.filter(edge => edge.targetId === solution.id)[0]).toMatchObject({ targetTitle: 'Proven solution' });
     });
 
     test('exposes the memos of a node in chronological order through graph-get-node', async () => {

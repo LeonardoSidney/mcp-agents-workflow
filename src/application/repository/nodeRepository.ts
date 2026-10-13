@@ -84,8 +84,29 @@ export class NodeRepository implements INodeRepository {
 
     private async edgesBySource (graphId: string, sourceId: string): Promise<EdgeReference[]> {
         const documents = await this.databaseGateway.listEdgesBySource({ graphId, sourceId });
+        if (documents.length === 0) {
+            return [];
+        }
 
-        return documents.map(document => toEdgeReference(EdgeDTO.to_domain(document)));
+        const targetIds = documents.map(document => document.target_id);
+        const uniqueTargetIds = targetIds.filter((id, index) => targetIds.indexOf(id) === index);
+        const titlesByTargetId = await this.titlesByTargetId(graphId, uniqueTargetIds);
+
+        return documents.map(document => {
+            const reference = toEdgeReference(EdgeDTO.to_domain(document));
+            const targetTitle = titlesByTargetId.get(document.target_id);
+            if (targetTitle === undefined) {
+                return reference;
+            }
+
+            return { ...reference, targetTitle };
+        });
+    }
+
+    private async titlesByTargetId (graphId: string, targetIds: string[]): Promise<Map<string, string>> {
+        const documents = await this.databaseGateway.listNodesByIds({ graphId, ids: targetIds });
+
+        return new Map(documents.map(document => [document._id, document.title] as [string, string]));
     }
 
     private async memosByNode (nodeId: string): Promise<Memo[]> {

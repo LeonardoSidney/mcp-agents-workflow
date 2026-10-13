@@ -72,7 +72,7 @@ Each node has a type, title, description and a lifecycle status (`pending` → `
 
 ### Edges
 
-An **edge** is a typed, first-class relationship between two nodes of the same graph — and the place where _how_ something was resolved is recorded in its description. There are 23 edge types covering structure (`CONTAINS`, `PART_OF`), causality (`DERIVED_FROM`, `AFFECTS`), resolution (`SOLVED_BY`, `ANSWERS`, `VALIDATES`, `INVALIDATES`), attribution (`CREATED_BY`, `ASSIGNED_TO`, `DISCOVERED_BY`), and decision flow (`SUPERSEDES`, `REJECTED`, `CONSTRAINED_BY`, `CONFLICTS_WITH`, `USER_VALIDATE`, …).
+An **edge** is a typed, first-class relationship between two nodes of the same graph — and the place where _how_ something was resolved is recorded in its description. There are 23 edge types covering structure (`CONTAINS`, `PART_OF`), causality (`DERIVED_FROM`, `AFFECTS`), resolution (`SOLVED_BY`, `ANSWERS`, `VALIDATES`, `INVALIDATES`), attribution (`CREATED_BY`, `ASSIGNED_TO`, `DISCOVERED_BY`), and decision flow (`SUPERSEDES`, `REJECTED`, `CONSTRAINED_BY`, `CONFLICTS_WITH`, `USER_VALIDATE`, …). When a node is read, its outgoing edges come back as references that carry the target node titles — an edge is self-describing, so a reader judges relevance from the edge type, target title and description without an extra fetch per target.
 
 ### Memos
 
@@ -95,8 +95,8 @@ The server exposes **14 tools** across three toolsets:
 | `graph-get-project`    | Fetch a single project by id (24-hex ObjectId) or exact name                                                                                                                                           |
 | `graph-delete-project` | Delete a project by id                                                                                                                                                                                 |
 | `graph-add-node`       | Add a typed node to an existing project graph                                                                                                                                                          |
-| `graph-get-nodes`      | List a project's nodes (descriptions only, no memo text; filter by type/status, cap with `limit`, newest first)                                                                                        |
-| `graph-get-node`       | Fetch a node by id, including its outgoing edges and memos                                                                                                                                             |
+| `graph-get-nodes`      | List a project's nodes (descriptions only, no memo text; each outgoing edge carries the target node title; filter by type/status, cap with `limit`, newest first)                                      |
+| `graph-get-node`       | Fetch a node by id, including its outgoing edges (each carrying the target node title) and memos                                                                                                       |
 | `graph-update-node`    | Partially update a node's title, description or status                                                                                                                                                 |
 | `graph-delete-node`    | Delete a node (refused while edges are still attached)                                                                                                                                                 |
 | `graph-search-nodes`   | Exact token search (not semantic, diacritics-insensitive) across titles, descriptions, edge memories and memos; each hit adds its best matching memo `bestMemo` in full (omitted when no memo matches) |

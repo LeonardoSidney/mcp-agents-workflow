@@ -1,6 +1,6 @@
 import { mcpTestHarness } from './mcpHarness.ts';
 
-const { addMemo, addNode, addProject, callTool, textOf } = mcpTestHarness();
+const { addEdge, addMemo, addNode, addProject, callTool, textOf } = mcpTestHarness();
 
 describe('MCP server - graph-get-nodes', () => {
     test('lists the nodes of one graph sorted by the most recent first', async () => {
@@ -129,5 +129,22 @@ describe('MCP server - graph-get-nodes', () => {
 
         const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; memos?: unknown; }[];
         expect(nodes[0]?.memos).toBeUndefined();
+    });
+
+    test('makes outgoing edges self-describing in the node list', async () => {
+        const graph = await addProject('Edge Title List Project', 'Project used to check edge target titles in the list');
+        const goal = await addNode(graph.id, 'GOAL', 'Listed goal', 'Goal linked from the listed task');
+        const task = await addNode(graph.id, 'TASK', 'Listed task', 'Task linked to the listed goal');
+        await addEdge(graph.id, task.id, goal.id, 'DEPENDS_ON', 'The task needs the goal to be clear');
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id });
+        expect(result.isError).toBeFalsy();
+
+        const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; edges: { targetId: string; targetTitle?: string; }[]; }[];
+        const listedTask = nodes.find(node => node.id === task.id);
+
+        expect(listedTask).toBeDefined();
+        expect(listedTask?.edges).toHaveLength(1);
+        expect(listedTask?.edges).toMatchObject([{ targetId: goal.id, targetTitle: 'Listed goal' }]);
     });
 });

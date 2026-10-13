@@ -13,6 +13,7 @@ export type EdgeReference = {
     id: string;
     type: EdgeType;
     targetId: string;
+    targetTitle?: string;
     description?: string;
 };
 

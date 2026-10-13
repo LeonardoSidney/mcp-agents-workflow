@@ -1,7 +1,7 @@
 import { mcpTestHarness } from './mcpHarness.ts';
 
 type SearchHit = {
-    node: { id: string; };
+    node: { id: string; edges: { targetId: string; targetTitle?: string; }[]; };
     titleScore: number;
     descriptionScore: number;
     memoryScore: number;
@@ -54,6 +54,7 @@ describe('MCP server - graph-search-nodes', () => {
         expect(results.map(hit => hit.node.id)).toEqual([node.id]);
         expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 0 });
         expect(results[0]?.memoryScore).toBeGreaterThan(0);
+        expect(results[0]?.node.edges).toMatchObject([{ targetId: target.id, targetTitle: 'Other observation' }]);
     });
 
     test('does not index incoming edge memory on the target node', async () => {
