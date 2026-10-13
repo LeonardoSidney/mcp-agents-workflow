@@ -28,55 +28,26 @@ describe('MCP server - graph-delete-node', () => {
         expect(textOf(result)).toContain('Node not found');
     });
 
-    test('refuses to delete a node with outgoing edges until they are removed', async () => {
-        const graph = await addProject('Orphan Project', 'Project used to test outgoing edge cleanup');
-        const goal = await addNode(graph.id, 'GOAL', 'Orphan goal', 'Goal pointed at by the removed task');
-        const task = await addNode(graph.id, 'TASK', 'Orphan source task', 'Task whose edges must be removed first');
+    test('refuses node and edge deletion while the edge is the only reference to its target node', async () => {
+        const graph = await addProject('Orphan Project', 'Project used to test the only-reference guard on edge delete');
+        const goal = await addNode(graph.id, 'GOAL', 'Orphan goal', 'Goal pointed at by the task');
+        const task = await addNode(graph.id, 'TASK', 'Orphan source task', 'Task linked to the goal');
         const edge = await addEdge(graph.id, task.id, goal.id, 'PART_OF', 'Records how the goal was resolved');
 
-        const firstDelete = await callTool('graph-delete-node', { id: task.id });
-        expect(firstDelete.isError).toBe(true);
-        expect(textOf(firstDelete)).toContain('is attached by');
+        const nodeDelete = await callTool('graph-delete-node', { id: task.id });
+        expect(nodeDelete.isError).toBe(true);
+        expect(textOf(nodeDelete)).toContain('is attached by');
+        expect(textOf(nodeDelete)).toContain(edge.id);
 
-        const removeEdge = await callTool('graph-delete-edge', { id: edge.id });
-        expect(removeEdge.isError).toBeFalsy();
-
-        const secondDelete = await callTool('graph-delete-node', { id: task.id });
-        expect(secondDelete.isError).toBeFalsy();
-
-        const remainingEdges = await edgesCollection.find({ deleted_at: { $exists: false } }).toArray();
-        expect(remainingEdges).toHaveLength(0);
-
-        const remainingNodes = await nodesCollection.find({ deleted_at: { $exists: false } }).toArray();
-        expect(remainingNodes).toHaveLength(1);
-        const remaining = remainingNodes[0];
-        if (!remaining) {
-            throw new Error('Expected the goal node to remain in the database');
-        }
-
-        expect(remaining._id.toHexString()).toEqual(goal.id);
-    });
-
-    test('allows deleting a node whose edges were deleted earlier', async () => {
-        const graph = await addProject('Ghost Project', 'Project used to test detached node deletion');
-        const goal = await addNode(graph.id, 'GOAL', 'Ghost goal', 'Goal referenced by a soon-removed task');
-        const task = await addNode(graph.id, 'TASK', 'Ghost task', 'Task pointing at the goal');
-        const edge = await addEdge(graph.id, task.id, goal.id, 'PART_OF');
-
-        const removeEdge = await callTool('graph-delete-edge', { id: edge.id });
-        expect(removeEdge.isError).toBeFalsy();
-
-        const firstDelete = await callTool('graph-delete-node', { id: task.id });
-        expect(firstDelete.isError).toBeFalsy();
-
-        const secondDelete = await callTool('graph-delete-node', { id: goal.id });
-        expect(secondDelete.isError).toBeFalsy();
-
-        const remainingNodes = await nodesCollection.find({ deleted_at: { $exists: false } }).toArray();
-        expect(remainingNodes).toHaveLength(0);
+        const edgeDelete = await callTool('graph-delete-edge', { id: edge.id });
+        expect(edgeDelete.isError).toBe(true);
+        expect(textOf(edgeDelete)).toContain(goal.id);
 
         const remainingEdges = await edgesCollection.find({ deleted_at: { $exists: false } }).toArray();
-        expect(remainingEdges).toHaveLength(0);
+        expect(remainingEdges).toHaveLength(1);
+
+        const remainingNodes = await nodesCollection.find({ deleted_at: { $exists: false } }).toArray();
+        expect(remainingNodes).toHaveLength(2);
     });
 
     test('deleting a node deletes its memos', async () => {

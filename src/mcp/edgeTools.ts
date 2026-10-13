@@ -62,7 +62,7 @@ export function registerEdgeTools (server: McpServer): void {
     server.registerTool(
         'graph-delete-edge',
         {
-            description: 'Delete an edge by id. Deleting an edge never touches its nodes; a node can only be deleted once it has no edges attached to it',
+            description: 'Delete an edge by id. Refuses deletion when the edge is the only reference to its target node, because deleting it would orphan the node',
             inputSchema: z.object({
                 id: objectId.describe('Edge id to delete (24-hex ObjectId)')
             })

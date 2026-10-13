@@ -229,5 +229,40 @@ describe('GraphSearchNodesService', () => {
         expect(results[0]).toMatchObject({ titleScore: 1, descriptionScore: 0, memoryScore: 1 });
         expect(results[0]?.score).toEqual(2 / 3);
     });
+
+    test('keeps a node in the AND gate when an edge without a description is present', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Unrelated task',
+            description: '',
+            edges: [
+                { id: 'e1', type: 'CONSTRAINED_BY', targetId: 't1' },
+                { id: 'e2', type: 'CONSTRAINED_BY', targetId: 't2', description: 'database migration' }
+            ]
+        });
+
+        const response = service.scoreNodes({ text: 'database migration', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results.map(result => result.node.id)).toEqual(['n1']);
+    });
+
+    test('scores outgoing edges only from the ones that carry a description', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Invoice report',
+            description: '',
+            edges: [
+                { id: 'e1', type: 'CONSTRAINED_BY', targetId: 't1' },
+                { id: 'e2', type: 'CONSTRAINED_BY', targetId: 't2', description: 'unrelated task' }
+            ]
+        });
+
+        const response = service.scoreNodes({ text: 'invoice report', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]).toMatchObject({ titleScore: 1, descriptionScore: 0, memoryScore: 0 });
+        expect(results[0]?.bestMemo).toBeNull();
+    });
 });
 

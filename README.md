@@ -103,7 +103,7 @@ The server exposes **14 tools** across three toolsets:
 | `graph-append-memo`    | Append an attributed discussion entry to a node                                                                                                                                                        |
 | `graph-add-edge`       | Add a typed, first-class edge between two nodes, with a memory in its description                                                                                                                      |
 | `graph-update-edge`    | Partially update an edge's type or description                                                                                                                                                         |
-| `graph-delete-edge`    | Delete an edge by id (never touches its nodes)                                                                                                                                                         |
+| `graph-delete-edge`    | Delete an edge by id (refused while the edge is the only reference to its target node, so the target never gets orphaned)                                                                              |
 
 On top of the tools, the server sends rich **instructions** to the MCP client at session start: the session bootstrap (locate or create the workspace project), the read-then-write workflow, query phrasing for `graph-search-nodes`, and how to attribute memos — so even a model that has never seen the graph behaves sensibly with it.
 

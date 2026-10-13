@@ -32,6 +32,14 @@ export class GraphDeleteEdgeUseCase implements IGraphDeleteEdgeUseCase {
             };
         }
 
+        const references = await this.edgeRepository.listEdgesByTarget({ graphId: edge.graphId, targetId: edge.targetId });
+        if (references.length <= 1) {
+            return {
+                success: false,
+                error: `Edge is the only reference to target node: ${edge.targetId}; deleting it would orphan the node`
+            };
+        }
+
         const deleted = await this.edgeRepository.deleteEdge({ graphId: edge.graphId, id: params.id });
         if (!deleted) {
             return {
