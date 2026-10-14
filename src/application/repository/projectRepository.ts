@@ -1,4 +1,4 @@
-import type { AddProjectRepositoryParams, DeleteProjectRepositoryParams, GetProjectByNameRepositoryParams, GetProjectRepositoryParams, IProjectRepository } from '@domain/repository/iProjectRepository.ts';
+import type { AddProjectRepositoryParams, DeleteProjectRepositoryParams, GetProjectByNameRepositoryParams, GetProjectRepositoryParams, HasProjectByNameRepositoryParams, IProjectRepository } from '@domain/repository/iProjectRepository.ts';
 import type { Project } from '@domain/entities/project.ts';
 import type { IDatabaseGateway } from '@domain/gateways/iDatabaseGateway.ts';
 import { ProjectDTO } from '@application/dto/projectDto.ts';
@@ -40,6 +40,10 @@ export class ProjectRepository implements IProjectRepository {
         }
 
         return ProjectDTO.to_domain(document);
+    }
+
+    async hasProjectByName (params: HasProjectByNameRepositoryParams): Promise<boolean> {
+        return this.databaseGateway.hasGraphByName({ name: params.name });
     }
 
     async deleteProject (params: DeleteProjectRepositoryParams): Promise<boolean> {

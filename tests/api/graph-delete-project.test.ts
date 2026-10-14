@@ -32,13 +32,17 @@ describe('MCP server - graph-delete-project', () => {
         expect(textOf(fetchResult)).toContain('Project not found');
     });
 
-    test('frees the project name for reuse after deletion', async () => {
-        const first = await addProject('Freed Project', 'Project whose name will be reused');
+    test('keeps the project name reserved even after deletion', async () => {
+        const first = await addProject('Reserved Project', 'Project whose name stays reserved');
 
         const deleteResult = await callTool('graph-delete-project', { id: first.id });
         expect(deleteResult.isError).toBeFalsy();
 
-        const reborn = await addProject('Freed Project', 'Reborn project reusing the freed name');
-        expect(reborn.id).not.toEqual(first.id);
+        const rebirth = await callTool('graph-add', { name: 'Reserved Project', description: 'Reborn project reusing the reserved name' });
+        expect(rebirth.isError).toBe(true);
+        expect(textOf(rebirth)).toContain('already exists');
+
+        const saved = await projectsCollection.find({ name: 'Reserved Project' }).toArray();
+        expect(saved).toHaveLength(1);
     });
 });

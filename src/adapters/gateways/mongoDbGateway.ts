@@ -7,6 +7,7 @@ import type {
     DeleteEdgeGatewayParams,
     DeleteGraphGatewayParams,
     DeleteNodeGatewayParams,
+    HasGraphByNameGatewayParams,
     IDatabaseGateway,
     ListEdgeGatewayParams,
     ListNodeGatewayParams,
@@ -113,6 +114,14 @@ export class MongoDBGateway implements IDatabaseGateway {
         }
 
         return this.fromRawProject(document);
+    }
+
+    async hasGraphByName (params: HasGraphByNameGatewayParams): Promise<boolean> {
+        const collection = this.client.db().collection<RawProjectDocument>('projects');
+
+        const document = await collection.findOne({ name: params.name }, { projection: { _id: 1 } });
+
+        return document !== null;
     }
 
     async deleteGraph (params: DeleteGraphGatewayParams): Promise<boolean> {

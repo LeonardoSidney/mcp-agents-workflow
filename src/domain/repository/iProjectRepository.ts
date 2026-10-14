@@ -5,6 +5,7 @@ export interface IProjectRepository {
     getProjects (): Promise<Project[]>;
     getProject (params: GetProjectRepositoryParams): Promise<Project | null>;
     getProjectByName (params: GetProjectByNameRepositoryParams): Promise<Project | null>;
+    hasProjectByName (params: HasProjectByNameRepositoryParams): Promise<boolean>;
     deleteProject (params: DeleteProjectRepositoryParams): Promise<boolean>;
 }
 
@@ -17,6 +18,10 @@ export type GetProjectRepositoryParams = {
 };
 
 export type GetProjectByNameRepositoryParams = {
+    name: string;
+};
+
+export type HasProjectByNameRepositoryParams = {
     name: string;
 };
 
