@@ -1,3 +1,4 @@
+import type { Memo } from '@domain/entities/memo.ts';
 import type { NodeWithMemos } from '@domain/entities/node.ts';
 import type { GraphSearchNodesServiceResponse, NodeSearchResult } from '@domain/services/iGraphSearchNodesService.ts';
 import { GraphSearchNodesService } from '@application/services/graph/graphSearchNodesService.ts';
@@ -30,6 +31,19 @@ function buildNode (partial: Partial<NodeWithMemos> & { id: string; title: strin
 
 describe('GraphSearchNodesService', () => {
     const service = new GraphSearchNodesService();
+
+    const mockMemos: Memo[] = [
+        { id: 'note', nodeId: 'n1', author: 'agent', type: 'note', text: 'ledger backup', createdAt: now },
+        { id: 'resolution', nodeId: 'n1', author: 'user', type: 'resolution', text: 'invoice export', createdAt: now },
+        { id: 'directive', nodeId: 'n1', author: 'system', type: 'directive', text: 'lint before merging', createdAt: now }
+    ];
+
+    const mockNode = buildNode({
+        id: 'n1',
+        title: 'harbor crane',
+        description: 'quarterly harvest',
+        memos: mockMemos
+    });
 
     test('returns a validation error when the search text is empty after normalization', () => {
         const response = service.scoreNodes({ text: '  ## ', nodes: [] });
@@ -65,7 +79,7 @@ describe('GraphSearchNodesService', () => {
             id: 'n1',
             title: 'Invoice',
             description: '',
-            memos: [{ id: 'm1', nodeId: 'n1', author: 'agent', text: 'Report monthly review', createdAt: now }]
+            memos: [{ id: 'm1', nodeId: 'n1', author: 'agent', type: 'resolution', text: 'Report monthly review', createdAt: now }]
         });
 
         const response = service.scoreNodes({ text: 'invoice report monthly', nodes: [node] });
@@ -92,7 +106,7 @@ describe('GraphSearchNodesService', () => {
             id: 'n1',
             title: 'Unrelated task',
             description: '',
-            memos: [{ id: 'm1', nodeId: 'n1', author: 'agent', text: 'audit deadline', createdAt: now }]
+            memos: [{ id: 'm1', nodeId: 'n1', author: 'agent', type: 'resolution', text: 'audit deadline', createdAt: now }]
         });
 
         const response = service.scoreNodes({ text: 'audit deadline', nodes: [node] });
@@ -100,6 +114,79 @@ describe('GraphSearchNodesService', () => {
         const results = expectScored(response);
         expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 0, memoryScore: 1 });
         expect(results[0]?.bestMemo).toMatchObject({ id: 'm1', author: 'agent', score: 1 });
+    });
+
+    test('never indexes note memos: a note-exclusive query cannot open the AND gate', () => {
+        const response = service.scoreNodes({ text: 'ledger backup', nodes: [mockNode] });
+
+        const results = expectScored(response);
+        expect(results).toHaveLength(0);
+    });
+
+    test('surfaces a node when its title carries the query tokens', () => {
+        const response = service.scoreNodes({ text: 'harbor crane', nodes: [mockNode] });
+
+        const results = expectScored(response);
+        expect(results).toHaveLength(1);
+        expect(results[0]).toMatchObject({ titleScore: 1, descriptionScore: 0, memoryScore: 0 });
+        expect(results[0]?.score).toEqual(1 / 3);
+    });
+
+    test('surfaces a node when its description carries the query tokens', () => {
+        const response = service.scoreNodes({ text: 'quarterly harvest', nodes: [mockNode] });
+
+        const results = expectScored(response);
+        expect(results).toHaveLength(1);
+        expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 1, memoryScore: 0 });
+        expect(results[0]?.score).toEqual(1 / 3);
+    });
+
+    test('surfaces a node when its resolution memo carries the query tokens', () => {
+        const response = service.scoreNodes({ text: 'invoice export', nodes: [mockNode] });
+
+        const results = expectScored(response);
+        expect(results).toHaveLength(1);
+        expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 0, memoryScore: 1 });
+        expect(results[0]?.bestMemo).toMatchObject({ id: 'resolution', author: 'user', type: 'resolution', score: 1 });
+        expect(results[0]?.score).toEqual(1 / 3);
+    });
+
+    test('surfaces a node when its directive memo carries the query tokens', () => {
+        const response = service.scoreNodes({ text: 'lint before merging', nodes: [mockNode] });
+
+        const results = expectScored(response);
+        expect(results).toHaveLength(1);
+        expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 0, memoryScore: 1 });
+        expect(results[0]?.bestMemo).toMatchObject({ id: 'directive', author: 'system', type: 'directive', score: 1 });
+        expect(results[0]?.score).toEqual(1 / 3);
+    });
+
+    test('splits the query across title and description, tying the exact single-field score', () => {
+        const response = service.scoreNodes({ text: 'crane harvest', nodes: [mockNode] });
+
+        const results = expectScored(response);
+        expect(results).toHaveLength(1);
+        expect(results[0]).toMatchObject({ titleScore: 1 / 2, descriptionScore: 1 / 2, memoryScore: 0 });
+        expect(results[0]?.bestMemo).toBeNull();
+        expect(results[0]?.score).toEqual(1 / 3);
+    });
+
+    test('skips note memos when surfacing the best memo, even when they match better', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Unrelated task',
+            description: '',
+            memos: [
+                { id: 'note', nodeId: 'n1', author: 'agent', type: 'note', text: 'audit deadline', createdAt: now },
+                { id: 'resolution', nodeId: 'n1', author: 'user', type: 'resolution', text: 'the audit deadline was confirmed', createdAt: now }
+            ]
+        });
+
+        const response = service.scoreNodes({ text: 'audit deadline', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]?.bestMemo?.id).toEqual('resolution');
+        expect(results[0]?.bestMemo?.type).toEqual('resolution');
     });
 
     test('ranks each memo individually, so the best match wins over the whole discussion', () => {
@@ -112,10 +199,11 @@ describe('GraphSearchNodesService', () => {
                     id: 'm1',
                     nodeId: 'n1',
                     author: 'agent',
+                    type: 'resolution',
                     text: 'A long discussion about a budget planning session that covered many unrelated topics',
                     createdAt: now
                 },
-                { id: 'm2', nodeId: 'n1', author: 'user', text: 'audit deadline', createdAt: now }
+                { id: 'm2', nodeId: 'n1', author: 'user', type: 'resolution', text: 'audit deadline', createdAt: now }
             ]
         });
 
@@ -133,8 +221,8 @@ describe('GraphSearchNodesService', () => {
             title: 'Unrelated task',
             description: '',
             memos: [
-                { id: 'older', nodeId: 'n1', author: 'agent', text: 'audit deadline', createdAt: older },
-                { id: 'newer', nodeId: 'n1', author: 'user', text: 'audit deadline', createdAt: now }
+                { id: 'older', nodeId: 'n1', author: 'agent', type: 'resolution', text: 'audit deadline', createdAt: older },
+                { id: 'newer', nodeId: 'n1', author: 'user', type: 'resolution', text: 'audit deadline', createdAt: now }
             ]
         });
 
@@ -220,7 +308,7 @@ describe('GraphSearchNodesService', () => {
             id: 'n1',
             title: 'Invoice export',
             description: '',
-            memos: [{ id: 'm1', nodeId: 'n1', author: 'user', text: 'invoice export', createdAt: now }]
+            memos: [{ id: 'm1', nodeId: 'n1', author: 'user', type: 'resolution', text: 'invoice export', createdAt: now }]
         });
 
         const response = service.scoreNodes({ text: 'invoice export', nodes: [node] });

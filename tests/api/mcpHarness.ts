@@ -195,8 +195,8 @@ export function mcpTestHarness () {
         return callTool('graph-get-node', { id });
     }
 
-    async function addMemo (nodeId: string, author: string, text: string): Promise<Memo> {
-        const result = await callTool('graph-append-memo', { id: nodeId, author, text });
+    async function addMemo (nodeId: string, author: string, type: string, text: string): Promise<Memo> {
+        const result = await callTool('graph-append-memo', { id: nodeId, author, type, text });
 
         if (result.isError) {
             const message = textOf(result);
@@ -220,6 +220,10 @@ export function mcpTestHarness () {
         return memo;
     }
 
+    async function editMemo (memoId: string, type: string): Promise<CallToolResult> {
+        return callTool('graph-edit-memo', { id: memoId, type });
+    }
+
     return {
         callTool,
         textOf,
@@ -229,6 +233,7 @@ export function mcpTestHarness () {
         addNode,
         addEdge,
         addMemo,
+        editMemo,
         fetchProject,
         fetchNode,
         projectsCollection,

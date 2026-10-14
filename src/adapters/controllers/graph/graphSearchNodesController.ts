@@ -71,6 +71,7 @@ export class GraphSearchNodesController implements IGraphSearchNodesController {
         return {
             id: bestMemo.id,
             author: bestMemo.author,
+            type: bestMemo.type,
             text: bestMemo.text,
             score: this.round(bestMemo.score)
         };

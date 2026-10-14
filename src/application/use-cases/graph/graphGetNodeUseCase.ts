@@ -1,6 +1,8 @@
+import type { MemoType } from '@domain/constants/memo-types.ts';
 import type { ILogger } from '@domain/logger.ts';
 import type { INodeRepository } from '@domain/repository/iNodeRepository.ts';
 import type { GraphGetNodeUseCaseParams, GraphGetNodeUseCaseResponse, IGraphGetNodeUseCase } from '@domain/use-cases/iGraphGetNodeUseCase.ts';
+import type { NodeWithMemos } from '@domain/entities/node.ts';
 
 export class GraphGetNodeUseCase implements IGraphGetNodeUseCase {
     private readonly logger: ILogger;
@@ -34,7 +36,15 @@ export class GraphGetNodeUseCase implements IGraphGetNodeUseCase {
 
         return {
             success: true,
-            node
+            node: this.filterMemos(node, params.types)
         };
+    }
+
+    private filterMemos (node: NodeWithMemos, types: MemoType[] | undefined): NodeWithMemos {
+        if (!types || types.length === 0) {
+            return node;
+        }
+
+        return { ...node, memos: node.memos.filter(memo => types.includes(memo.type)) };
     }
 }

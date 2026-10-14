@@ -1,14 +1,16 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
 import { MEMO_AUTHORS } from '@domain/constants/memo-authors.ts';
+import { MEMO_TYPES } from '@domain/constants/memo-types.ts';
 import { NODE_STATUS } from '@domain/constants/node-status.ts';
 import { NODE_TYPES } from '@domain/constants/node-types.ts';
-import { graphAddNodeController, graphAppendMemoController, graphDeleteNodeController, graphGetNodeController, graphGetNodesController, graphSearchNodesController, graphUpdateNodeController } from '@src/container.ts';
+import { graphAddNodeController, graphAppendMemoController, graphDeleteNodeController, graphEditMemoController, graphGetNodeController, graphGetNodesController, graphSearchNodesController, graphUpdateNodeController } from '@src/container.ts';
 import { objectId } from './objectIdSchema.ts';
 
 const NODE_TYPE_VALUES = Object.values(NODE_TYPES).map(nodeType => nodeType.value);
 const NODE_STATUS_VALUES = Object.values(NODE_STATUS).map(nodeStatus => nodeStatus.value);
 const MEMO_AUTHOR_VALUES = Object.values(MEMO_AUTHORS).map(memoAuthor => memoAuthor.value);
+const MEMO_TYPE_VALUES = Object.values(MEMO_TYPES).map(memoType => memoType.value);
 
 export function registerNodeTools (server: McpServer): void {
     server.registerTool(
@@ -18,8 +20,8 @@ export function registerNodeTools (server: McpServer): void {
             inputSchema: z.object({
                 graphId: objectId.describe('Graph (project) id this node belongs to (24-hex ObjectId)'),
                 type: z.enum(NODE_TYPE_VALUES).describe('Node type'),
-                title: z.string().min(1).describe('Node title'),
-                description: z.string().min(1).describe('Node description'),
+                title: z.string().min(1).describe('Node title: short (under 10 words) and unique within the graph, carrying the searchable tokens of the work (e.g. "invoice export finance validation"), no filler'),
+                description: z.string().min(1).describe('Node description: 1-2 short lines packing the key tokens a future search would use (problem, technologies, domain terms). Keep long detail out here - it belongs in memos'),
                 status: z.enum(NODE_STATUS_VALUES).describe('Initial node status').default('pending')
             })
         },
@@ -41,16 +43,17 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-append-memo',
         {
-            description: 'Append a memo to an existing node: one entry of the discussion recorded on the node, with the author declared by the caller. Memos are append-only and survive the node being completed, and are exposed on the node by graph-get-node, graph-get-nodes and graph-search-nodes',
+            description: 'Append a memo to an existing node: one entry of the discussion recorded on the node, with the author and the type declared by the caller. Memos survive the node being completed and are exposed on the node by graph-get-node and graph-get-nodes; graph-search-nodes indexes only "resolution" and "directive" memos. Reclassify an existing memo with graph-edit-memo',
             inputSchema: z.object({
                 id: objectId.describe('Node id to append the memo to (24-hex ObjectId)'),
                 author: z.enum(MEMO_AUTHOR_VALUES).describe('Speaker of this memo, not the one typing it: "agent" for the agent, "user" for a rule or clarification provided by the user, "system" for the orchestration layer'),
+                type: z.enum(MEMO_TYPE_VALUES).describe('Type of this memo: "note" for ephemeral working state that is not searchable, "resolution" for a confirmed answer that is searchable, "directive" for a rule future work must respect that is searchable'),
                 text: z.string().min(1).describe('Memo text: what was discussed, the difficulty met, or the rule that applies')
             })
         },
-        async ({ id, author, text }) => {
+        async ({ id, author, type, text }) => {
             const controller = await graphAppendMemoController();
-            const response = await controller.handle({ nodeId: id, author, text });
+            const response = await controller.handle({ nodeId: id, author, type, text });
 
             const memo = response.memo;
 
@@ -60,6 +63,30 @@ export function registerNodeTools (server: McpServer): void {
 
             return {
                 content: [{ type: 'text' as const, text: output }],
+                isError: !response.success
+            };
+        }
+    );
+
+    server.registerTool(
+        'graph-edit-memo',
+        {
+            description: 'Reclassify the type of an existing memo by id (24-hex ObjectId). The memo text and author are immutable and never change; use it to fix the type of a memo (e.g. promote a "note" that turned out to be a reusable "resolution" or a "directive")',
+            inputSchema: z.object({
+                id: objectId.describe('Memo id to reclassify (24-hex ObjectId)'),
+                type: z.enum(MEMO_TYPE_VALUES).describe('New memo type: "note" (not searchable), "resolution" (searchable) or "directive" (searchable)')
+            })
+        },
+        async ({ id, type }) => {
+            const controller = await graphEditMemoController();
+            const response = await controller.handle({ id, type });
+
+            const text = response.success
+                ? `Memo updated successfully: ${id}`
+                : `Failed to update memo: ${response.error ?? 'Unknown error'}`;
+
+            return {
+                content: [{ type: 'text' as const, text }],
                 isError: !response.success
             };
         }
@@ -94,14 +121,15 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-get-node',
         {
-            description: 'Fetch a single node from the agent workflow graph by id (24-hex ObjectId). Outgoing edges are self-describing: each edge carries the target node title',
+            description: 'Fetch a single node from the agent workflow graph by id (24-hex ObjectId). Memos can be filtered by type with types (e.g. ["resolution", "directive"] to read only the reusable memory). Outgoing edges are self-describing: each edge carries the target node title',
             inputSchema: z.object({
-                id: objectId.describe('Node id (24-hex ObjectId)')
+                id: objectId.describe('Node id (24-hex ObjectId)'),
+                types: z.array(z.enum(MEMO_TYPE_VALUES)).min(1).optional().describe('Only return memos of these types (e.g. ["resolution", "directive"]); omit for all memos')
             })
         },
-        async ({ id }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {
+        async ({ id, types }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {
             const controller = await graphGetNodeController();
-            const response = await controller.handle({ id });
+            const response = await controller.handle({ id, types });
 
             const text = response.success && response.node
                 ? JSON.stringify(response.node, null, 4)
@@ -117,7 +145,7 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-search-nodes',
         {
-            description: 'Search the nodes of a graph (project) by text across title, description, and memories recorded on the node outgoing edges and memos appended to the node, ranked by similarity. Tokens are conjunctive (AND): a node is returned only when its searchable text (title, description, memos and outgoing edge descriptions combined) contains every token of the query, so more tokens make the search stricter. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); a token absent from a node disqualifies it, so keep the query short or cap the result count with limit. Each hit carries the full text of the single best-matching memo of the node as bestMemo (omitted when no memo matches); the rest of the discussion of a node is read with graph-get-node. The outgoing edges of a hit are self-describing: each edge carries the target node title.',
+            description: 'Search the nodes of a graph (project) by text across title, description, and reusable memory: the node outgoing edge descriptions and memos typed "resolution" or "directive" ("note" memos are never indexed), ranked by similarity. Tokens are conjunctive (AND): a node is returned only when its searchable text (title, description, resolved/directive memos and outgoing edge descriptions combined) contains every token of the query, so more tokens make the search stricter. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); a token absent from a node disqualifies it, so keep the query short or cap the result count with limit. Each hit carries the full text of the single best-matching memo of the node as bestMemo (omitted when no memo matches); the rest of the discussion of a node is read with graph-get-node. The outgoing edges of a hit are self-describing: each edge carries the target node title.',
             inputSchema: z.object({
                 graphId: objectId.describe('Graph (project) id whose nodes should be searched (24-hex ObjectId)'),
                 text: z.string().min(1).describe('Text to match across title, description, and memories (outgoing edge descriptions) as short meaningful tokens; tokens are ANDed together, so a node is only returned when it contains every token'),

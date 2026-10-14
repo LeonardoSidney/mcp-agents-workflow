@@ -1,4 +1,5 @@
 import type { MemoAuthor } from '@domain/constants/memo-authors.ts';
+import type { MemoType } from '@domain/constants/memo-types.ts';
 import type { NodeSummaryWithEdges } from '@domain/entities/node.ts';
 
 export interface IGraphSearchNodesController {
@@ -8,6 +9,7 @@ export interface IGraphSearchNodesController {
 export type MemoMatchSummary = {
     id: string;
     author: MemoAuthor;
+    type: MemoType;
     text: string;
     score: number;
 };

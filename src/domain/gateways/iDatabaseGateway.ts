@@ -20,6 +20,8 @@ export interface IDatabaseGateway {
     listEdgesBySource (params: ListEdgesBySourceGatewayParams): Promise<EdgeDocument[]>;
     listEdgesByTarget (params: ListEdgesByTargetGatewayParams): Promise<EdgeDocument[]>;
     addMemo (params: AddMemoGatewayParams): Promise<void>;
+    updateMemoType (params: UpdateMemoTypeGatewayParams): Promise<boolean>;
+    listMemo (params: ListMemoGatewayParams): Promise<MemoDocument | null>;
     listMemosByNode (params: ListMemosByNodeGatewayParams): Promise<MemoDocument[]>;
     deleteMemosByNode (params: DeleteMemosByNodeGatewayParams): Promise<boolean>;
 }
@@ -127,12 +129,22 @@ export type MemoDocument = {
     _id: string;
     node_id: string;
     author: string;
+    type?: string;
     text: string;
     created_at: Date;
 };
 
 export type AddMemoGatewayParams = {
     memo: MemoDocument;
+};
+
+export type UpdateMemoTypeGatewayParams = {
+    id: string;
+    type: string;
+};
+
+export type ListMemoGatewayParams = {
+    id: string;
 };
 
 export type ListMemosByNodeGatewayParams = {

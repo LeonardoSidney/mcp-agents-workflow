@@ -86,26 +86,27 @@ Together, nodes (what), edges (how it connects / how it was resolved) and memos 
 
 ## Available tools
 
-The server exposes **14 tools** across three toolsets:
+The server exposes **15 tools** across three toolsets:
 
-| Tool                   | Description                                                                                                                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `graph-add`            | Create a new project graph (the name is unique across the store)                                                                                                                                       |
-| `graph-get-projects`   | List all projects in the graph store                                                                                                                                                                   |
-| `graph-get-project`    | Fetch a single project by id (24-hex ObjectId) or exact name                                                                                                                                           |
-| `graph-delete-project` | Delete a project by id                                                                                                                                                                                 |
-| `graph-add-node`       | Add a typed node to an existing project graph                                                                                                                                                          |
-| `graph-get-nodes`      | List a project's nodes (descriptions only, no memo text; each outgoing edge carries the target node title; filter by type/status, cap with `limit`, newest first)                                      |
-| `graph-get-node`       | Fetch a node by id, including its outgoing edges (each carrying the target node title) and memos                                                                                                       |
-| `graph-update-node`    | Partially update a node's title, description or status                                                                                                                                                 |
-| `graph-delete-node`    | Delete a node (refused while edges are still attached)                                                                                                                                                 |
-| `graph-search-nodes`   | Exact token search (not semantic, diacritics-insensitive) across titles, descriptions, edge memories and memos; each hit adds its best matching memo `bestMemo` in full (omitted when no memo matches) |
-| `graph-append-memo`    | Append an attributed discussion entry to a node                                                                                                                                                        |
-| `graph-add-edge`       | Add a typed, first-class edge between two nodes, with a memory in its description                                                                                                                      |
-| `graph-update-edge`    | Partially update an edge's type or description                                                                                                                                                         |
-| `graph-delete-edge`    | Delete an edge by id (refused while the edge is the only reference to its target node, so the target never gets orphaned)                                                                              |
+| Tool                   | Description                                                                                                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `graph-add`            | Create a new project graph (the name is unique across the store)                                                                                                                                      |
+| `graph-get-projects`   | List all projects in the graph store                                                                                                                                                                  |
+| `graph-get-project`    | Fetch a single project by id (24-hex ObjectId) or exact name                                                                                                                                          |
+| `graph-delete-project` | Delete a project by id                                                                                                                                                                                |
+| `graph-add-node`       | Add a typed node to an existing project graph                                                                                                                                                         |
+| `graph-get-nodes`      | List a project's nodes (descriptions only, no memo text; each outgoing edge carries the target node title; filter by type/status, cap with `limit`, newest first)                                     |
+| `graph-get-node`       | Fetch a node by id, including its outgoing edges (each carrying the target node title) and its memos, optionally filtered by memo type (e.g. ["resolution", "directive"])                             |
+| `graph-update-node`    | Partially update a node's title, description or status                                                                                                                                                |
+| `graph-delete-node`    | Delete a node (refused while edges are still attached)                                                                                                                                                |
+| `graph-search-nodes`   | Exact token search (not semantic, diacritics-insensitive) across titles, descriptions, edge memories and the searchable memos (`resolution`, `directive`); each hit adds its best matching `bestMemo` |
+| `graph-append-memo`    | Append an attributed, typed discussion entry to a node (`note`, `resolution` or `directive`; `type` is required)                                                                                      |
+| `graph-add-edge`       | Add a typed, first-class edge between two nodes, with a memory in its description                                                                                                                     |
+| `graph-update-edge`    | Partially update an edge's type or description                                                                                                                                                        |
+| `graph-delete-edge`    | Delete an edge by id (refused while the edge is the only reference to its target node, so the target never gets orphaned)                                                                             |
+| `graph-edit-memo`      | Reclassify the type of an existing memo by id (24-hex ObjectId); the memo text and author stay immutable and never change                                                                             |
 
-On top of the tools, the server sends rich **instructions** to the MCP client at session start: the session bootstrap (locate or create the workspace project), the read-then-write workflow, query phrasing for `graph-search-nodes`, and how to attribute memos — so even a model that has never seen the graph behaves sensibly with it.
+On top of the tools, the server sends rich **instructions** to the MCP client at session start: the session bootstrap (locate or create the workspace project), the read-then-write workflow, query phrasing for `graph-search-nodes`, and how to classify, attribute and reclassify memos — so even a model that has never seen the graph behaves sensibly with it.
 
 ## How the agent adopts it
 

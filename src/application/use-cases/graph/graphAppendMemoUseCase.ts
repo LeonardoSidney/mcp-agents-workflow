@@ -50,6 +50,7 @@ export class GraphAppendMemoUseCase implements IGraphAppendMemoUseCase {
         const mapped = this.graphAppendMemoService.mapMemo({
             nodeId: params.nodeId,
             author: params.author,
+            type: params.type,
             text: params.text
         });
         if (!mapped.success || !mapped.memo) {

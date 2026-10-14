@@ -11,6 +11,8 @@ The graph persists across sessions. Never assume that knowledge from a previous 
 
 Every agent is responsible for both retrieving relevant knowledge before acting and preserving valuable knowledge after acting.
 
+The graph is language-neutral shared memory: every string written to it — project descriptions, node titles, node descriptions, edge descriptions, memo text — must be in English, regardless of the language of the conversation. Search with English tokens as well, translating the user's concepts rather than mirroring their language. Token-based search does not translate: a node written in one language is invisible to a query in another.
+
 ## 2. Mandatory bootstrap — first operation, every turn
 
 Before answering the user, investigating a problem, modifying files, or performing any substantive work, bootstrap from the graph.
@@ -64,11 +66,13 @@ For each nontrivial task:
 1. Search for the problem, relevant technologies, domain concepts, and important constraints.
 2. Inspect promising nodes with \`graph - get - node\`.
 3. Follow relevant outgoing edges to discover related solutions, decisions, and rules. Edges are self-describing: each edge carries the target node title, so judge relevance from the edge type, target title and description before fetching the target.
-4. Read the target nodes and their memos.
+4. Read the target nodes and their memos; use the \`types\` filter of \`graph - get - node\` (e.g. \`["resolution", "directive"]\`) to read only the reusable memory when the full discussion is not needed.
 5. Identify what was attempted, what failed, what worked, why it worked, and under which conditions.
 6. Determine whether the previous solution applies to the current context.
 
 If a search fails, change or simplify the query before concluding that no relevant knowledge exists.
+
+Search only sees the searchable surface of a node: title, description, outgoing edge descriptions, and memos typed \`resolution\` or \`directive\`. \`note\` memos are never indexed; read a node's full discussion with \`graph - get - node\`.
 
 Never invent prior decisions, claim that a rule exists without evidence, or apply a historical solution without considering its context.
 
@@ -87,6 +91,12 @@ Use nodes to preserve independently meaningful knowledge.
 Use only node types supported by the graph tools. If a desired type is unavailable, use the closest supported type without inventing a new enum value.
 
 Avoid duplicating reusable knowledge. When a relevant solution or constraint already exists, link to it instead of creating another equivalent node.
+
+Titles and descriptions are the searchable surface of the graph and are re-read on every bootstrap, turn after turn, so every token in them is paid for repeatedly. Keep them lean:
+
+- Title: under 10 words, unique within the project, packed with the searchable tokens of the work (e.g. "invoice export finance validation"). No filler, no status words.
+- Description: 1-2 lines carrying the key context a future search would query for (problem, technologies, domain terms). Chronology, long detail, and discussion belong in memos, not in the description.
+- Each field must add tokens the other does not have: never restate the title in the description or vice versa.
 
 ## 6. Edge responsibilities
 
@@ -111,7 +121,7 @@ Do not store the entire task discussion only in an edge description. Use the edg
 
 ## 7. Memo responsibilities
 
-Memos preserve the discussion associated with a node and must retain the identity of the speaker.
+Memos preserve the discussion associated with a node and must retain the identity of the speaker and the type of knowledge carried.
 
 Use author \`agent\` for the agent's findings, attempts, reasoning summaries, and implementation results.
 
@@ -119,7 +129,15 @@ Use author \`user\` for user-provided requirements, clarifications, corrections,
 
 Use author \`system\` for orchestration-layer instructions or findings genuinely originating from the system.
 
-Memos are append-only. Add new information without erasing the historical discussion.
+Classify every memo at the moment of appending:
+
+- \`note\`: ephemeral working state — progress, a finding in the making, an attempt and its outcome. Notes keep the chronology honest; they are never searchable.
+- \`resolution\`: a confirmed answer to a problem — what worked, why it worked, under which conditions. Searchable.
+- \`directive\`: a rule, requirement, or decision that future work must respect. Searchable.
+
+Only \`resolution\` and \`directive\` memos are indexed by \`graph - search - nodes\`; \`note\` memos are invisible to search. Do not expect a fact to be found later unless it is recorded in a searchable type. When in doubt, record it as \`note\` and promote it with \`graph - edit - memo\` once the knowledge is confirmed and reusable.
+
+Correct the classification with \`graph - edit - memo\`. Memo text and author are immutable: the chronology and the attribution of the discussion never change; only the type is reclassified.
 
 Record meaningful discoveries, rejected approaches, failures, successful approaches, and explanations that future agents could reuse.
 

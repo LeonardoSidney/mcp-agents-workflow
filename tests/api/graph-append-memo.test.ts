@@ -9,10 +9,11 @@ describe('MCP server - graph-append-memo', () => {
         const graph = await addProject('Memo Project', 'Project used to append memos');
         const node = await addNode(graph.id, 'TASK', 'Payment task', 'Compute the payment amount');
 
-        const memo = await addMemo(node.id, 'agent', 'Stuck: the discount rule is not applied when the total is negative');
+        const memo = await addMemo(node.id, 'agent', 'note', 'Stuck: the discount rule is not applied when the total is negative');
 
         expect(memo).toMatchObject({
             author: 'agent',
+            type: 'note',
             text: 'Stuck: the discount rule is not applied when the total is negative'
         });
 
@@ -21,6 +22,7 @@ describe('MCP server - graph-append-memo', () => {
         expect(saved[0]).toMatchObject({
             node_id: new ObjectId(node.id),
             author: 'agent',
+            type: 'note',
             text: 'Stuck: the discount rule is not applied when the total is negative'
         });
     });
@@ -32,7 +34,7 @@ describe('MCP server - graph-append-memo', () => {
         const updated = await callTool('graph-update-node', { id: node.id, status: 'completed' });
         expect(updated.isError).toBeFalsy();
 
-        await addMemo(node.id, 'system', 'The retry rule that unblocked this task: limit the queue depth to 10');
+        await addMemo(node.id, 'system', 'directive', 'The retry rule that unblocked this task: limit the queue depth to 10');
 
         const fetched = await fetchNode(node.id);
         expect(fetched.isError).toBeFalsy();
@@ -49,7 +51,7 @@ describe('MCP server - graph-append-memo', () => {
     test('refuses to append a memo to a node that does not exist', async () => {
         const missingNodeId = '0'.repeat(24);
 
-        const result = await callTool('graph-append-memo', { id: missingNodeId, author: 'agent', text: 'An orphan memo' });
+        const result = await callTool('graph-append-memo', { id: missingNodeId, author: 'agent', type: 'note', text: 'An orphan memo' });
 
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('Node not found');
@@ -62,7 +64,20 @@ describe('MCP server - graph-append-memo', () => {
         const graph = await addProject('Memo Empty Text Project', 'Project used to reject an empty memo');
         const node = await addNode(graph.id, 'TASK', 'Memoed task', 'Task used to reject an empty memo');
 
-        const result = await callTool('graph-append-memo', { id: node.id, author: 'agent', text: '' });
+        const result = await callTool('graph-append-memo', { id: node.id, author: 'agent', type: 'note', text: '' });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('Invalid arguments');
+
+        const saved = await memosCollection.find({}).toArray();
+        expect(saved).toHaveLength(0);
+    });
+
+    test('refuses to append a memo without a type', async () => {
+        const graph = await addProject('Memo No Type Project', 'Project used to reject a memo without a type');
+        const node = await addNode(graph.id, 'TASK', 'Memoed task', 'Task used to reject a memo without a type');
+
+        const result = await callTool('graph-append-memo', { id: node.id, author: 'agent', text: 'A memo that lost its type' });
 
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('Invalid arguments');

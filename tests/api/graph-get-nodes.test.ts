@@ -121,7 +121,7 @@ describe('MCP server - graph-get-nodes', () => {
     test('keeps memo discussions out of the node list', async () => {
         const graph = await addProject('Memo List Project', 'Project used to keep discussions out of the list');
         const node = await addNode(graph.id, 'TASK', 'Memoed task', 'Task with a recorded discussion');
-        await addMemo(node.id, 'user', 'The clause that must never appear in a node list');
+        await addMemo(node.id, 'user', 'resolution', 'The clause that must never appear in a node list');
 
         const result = await callTool('graph-get-nodes', { graphId: graph.id });
         expect(result.isError).toBeFalsy();

@@ -18,9 +18,9 @@ export class GraphAppendMemoController implements IGraphAppendMemoController {
     async handle (params: GraphAppendMemoControllerParams): Promise<GraphAppendMemoControllerResponse> {
         this.logger.info('Executing GraphAppendMemoController::handle', params);
 
-        const { nodeId, author, text } = params;
+        const { nodeId, author, type, text } = params;
 
-        const response = await this.useCase.execute({ nodeId, author, text });
+        const response = await this.useCase.execute({ nodeId, author, type, text });
 
         if (!response.success || !response.memo) {
             const result = {

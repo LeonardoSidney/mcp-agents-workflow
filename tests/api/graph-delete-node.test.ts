@@ -53,7 +53,7 @@ describe('MCP server - graph-delete-node', () => {
     test('deleting a node deletes its memos', async () => {
         const graph = await addProject('Memo Delete Project', 'Project used to delete a node with memos');
         const node = await addNode(graph.id, 'TASK', 'Doomed task', 'Task that will be deleted with its memos');
-        await addMemo(node.id, 'user', 'A discussion that dies with the node');
+        await addMemo(node.id, 'user', 'note', 'A discussion that dies with the node');
 
         const deleteResult = await callTool('graph-delete-node', { id: node.id });
         expect(deleteResult.isError).toBeFalsy();

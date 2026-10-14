@@ -1,3 +1,4 @@
+import type { MemoType } from '@domain/constants/memo-types.ts';
 import type { NodeSummaryWithMemos } from '@domain/entities/node.ts';
 
 export interface IGraphGetNodeController {
@@ -6,6 +7,7 @@ export interface IGraphGetNodeController {
 
 export type GraphGetNodeControllerParams = {
     id: string;
+    types?: MemoType[];
 };
 
 export type GraphGetNodeControllerResponse = {

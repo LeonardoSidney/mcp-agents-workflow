@@ -24,7 +24,9 @@ import type {
     UpdateNodeGatewayParams,
     AddMemoGatewayParams,
     ListMemosByNodeGatewayParams,
-    DeleteMemosByNodeGatewayParams
+    DeleteMemosByNodeGatewayParams,
+    UpdateMemoTypeGatewayParams,
+    ListMemoGatewayParams
 } from '@domain/gateways/iDatabaseGateway.ts';
 
 export type RawProjectDocument = {
@@ -62,6 +64,7 @@ export type RawMemoDocument = {
     _id: ObjectId;
     node_id: ObjectId;
     author: string;
+    type?: string;
     text: string;
     created_at: Date;
     deleted_at?: Date;
@@ -267,6 +270,28 @@ export class MongoDBGateway implements IDatabaseGateway {
         const collection = this.client.db().collection<RawMemoDocument>('memos');
 
         await collection.insertOne(this.toRawMemo(params.memo));
+    }
+
+    async updateMemoType (params: UpdateMemoTypeGatewayParams): Promise<boolean> {
+        const collection = this.client.db().collection<RawMemoDocument>('memos');
+
+        const result = await collection.updateOne(
+            { _id: new ObjectId(params.id), deleted_at: { $exists: false } },
+            { $set: { type: params.type } }
+        );
+
+        return result.matchedCount > 0;
+    }
+
+    async listMemo (params: ListMemoGatewayParams): Promise<MemoDocument | null> {
+        const collection = this.client.db().collection<RawMemoDocument>('memos');
+
+        const document = await collection.findOne({ _id: new ObjectId(params.id), deleted_at: { $exists: false } });
+        if (!document) {
+            return null;
+        }
+
+        return this.fromRawMemo(document);
     }
 
     async listMemosByNode (params: ListMemosByNodeGatewayParams): Promise<MemoDocument[]> {

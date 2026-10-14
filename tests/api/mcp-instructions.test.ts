@@ -16,10 +16,14 @@ describe('MCP server instructions', () => {
             'graph - search - nodes',
             'graph - get - node',
             'append a memo',
-            'Memos are append-only',
+            'Classify every memo at the moment of appending',
+            'graph - edit - memo',
+            'under 10 words',
             'TASK → SOLUTION',
             'in_progress',
-            'Cross-task learning'
+            'Cross-task learning',
+            'language-neutral shared memory',
+            'must be in English'
         ]) {
             expect(text).toContain(anchor);
         }
@@ -37,5 +41,12 @@ describe('MCP server instructions', () => {
         const authorDescription = properties['author']?.description;
 
         expect(authorDescription).toContain('not the one typing it');
+
+        const required = schema['required'] as string[] | undefined;
+        expect(required).toContain('type');
+
+        const typeDescription = properties['type']?.description;
+        expect(typeDescription).toContain('resolution');
+        expect(typeDescription).toContain('directive');
     });
 });

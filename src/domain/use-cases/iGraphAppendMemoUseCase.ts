@@ -1,18 +1,20 @@
 import type { MemoAuthor } from '@domain/constants/memo-authors.ts';
+import type { MemoType } from '@domain/constants/memo-types.ts';
 import type { Memo } from '@domain/entities/memo.ts';
 
 export interface IGraphAppendMemoUseCase {
-  execute (params: GraphAppendMemoUseCaseParams): Promise<GraphAppendMemoUseCaseResponse>;
+    execute (params: GraphAppendMemoUseCaseParams): Promise<GraphAppendMemoUseCaseResponse>;
 }
 
 export type GraphAppendMemoUseCaseParams = {
-  nodeId: string;
-  author: MemoAuthor;
-  text: string;
+    nodeId: string;
+    author: MemoAuthor;
+    type: MemoType;
+    text: string;
 };
 
 export type GraphAppendMemoUseCaseResponse = {
-  success: boolean;
-  memo?: Memo;
-  error?: string;
+    success: boolean;
+    memo?: Memo;
+    error?: string;
 };

@@ -1,3 +1,4 @@
+import type { MemoType } from '@domain/constants/memo-types.ts';
 import type { NodeWithMemos } from '@domain/entities/node.ts';
 
 export interface IGraphGetNodeUseCase {
@@ -6,6 +7,7 @@ export interface IGraphGetNodeUseCase {
 
 export type GraphGetNodeUseCaseParams = {
     id: string;
+    types?: MemoType[];
 };
 
 export type GraphGetNodeUseCaseResponse = {

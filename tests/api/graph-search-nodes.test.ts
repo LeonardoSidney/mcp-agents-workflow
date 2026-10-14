@@ -5,7 +5,7 @@ type SearchHit = {
     titleScore: number;
     descriptionScore: number;
     memoryScore: number;
-    bestMemo?: { id: string; author: string; text: string; score: number; };
+    bestMemo?: { id: string; author: string; type: string; text: string; score: number; };
     score: number;
 };
 
@@ -86,7 +86,7 @@ describe('MCP server - graph-search-nodes', () => {
         const graph = await addProject('Memo Search Project', 'Project used to search node memos');
         const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
         await addNode(graph.id, 'TASK', 'Another task', 'Still nothing to match');
-        await addMemo(node.id, 'user', 'The reimbursement rule applies to this kind of task');
+        await addMemo(node.id, 'user', 'directive', 'The reimbursement rule applies to this kind of task');
 
         const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'reimbursement rule' });
         expect(result.isError).toBeFalsy();
@@ -201,8 +201,8 @@ describe('MCP server - graph-search-nodes', () => {
     test('surfaces the single best-matching memo of the node as bestMemo', async () => {
         const graph = await addProject('Best Memo Project', 'Project used to surface the best matching memo');
         const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
-        const match = await addMemo(node.id, 'user', 'The confidential reimbursement clause');
-        await addMemo(node.id, 'agent', 'An unrelated note with no relevant words at all');
+        const match = await addMemo(node.id, 'user', 'resolution', 'The confidential reimbursement clause');
+        await addMemo(node.id, 'agent', 'note', 'An unrelated note with no relevant words at all');
 
         const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'confidential reimbursement' });
         expect(result.isError).toBeFalsy();
@@ -232,7 +232,7 @@ describe('MCP server - graph-search-nodes', () => {
         const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
         const padding = Array.from({ length: 40 }, (_, index) => `padded${index}`).join(' ');
         const longText = `Audit deadline review board meets every single month ${padding}`;
-        const memo = await addMemo(node.id, 'agent', longText);
+        const memo = await addMemo(node.id, 'agent', 'resolution', longText);
 
         const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'audit deadline review board' });
         expect(result.isError).toBeFalsy();
@@ -243,5 +243,32 @@ describe('MCP server - graph-search-nodes', () => {
         expect(results[0]?.bestMemo).toMatchObject({ id: memo.id, author: 'agent' });
         expect(longText.length).toBeGreaterThan(240);
         expect(results[0]?.bestMemo?.text).toEqual(longText);
+    });
+
+    test('never indexes note memos in search', async () => {
+        const graph = await addProject('Note Search Project', 'Project used to verify note memos are not indexed');
+        const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
+        await addMemo(node.id, 'agent', 'note', 'confidential reimbursement clause');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'confidential reimbursement' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results).toHaveLength(0);
+    });
+
+    test('skips note memos when surfacing the best memo', async () => {
+        const graph = await addProject('Note Best Memo Project', 'Project used to verify note memos never surface as bestMemo');
+        const node = await addNode(graph.id, 'TASK', 'Unrelated task title', 'Nothing to match here');
+        await addMemo(node.id, 'agent', 'note', 'The confirmed confidential reimbursement clause');
+        const resolution = await addMemo(node.id, 'user', 'resolution', 'The confidential reimbursement clause was discussed');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'confidential reimbursement clause' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results).toHaveLength(1);
+        expect(results[0]?.bestMemo?.id).toEqual(resolution.id);
+        expect(results[0]?.bestMemo?.type).toEqual('resolution');
     });
 });

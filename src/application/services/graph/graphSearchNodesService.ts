@@ -1,3 +1,4 @@
+import { SEARCHABLE_MEMO_TYPES } from '@domain/constants/memo-types.ts';
 import type { EdgeReference } from '@domain/entities/edge.ts';
 import type { Memo, MemoMatch } from '@domain/entities/memo.ts';
 import type { NodeWithMemos } from '@domain/entities/node.ts';
@@ -16,13 +17,15 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
         const results: NodeSearchResult[] = [];
 
         for (const node of params.nodes) {
-            if (!this.nodeMatchesAllTokens(node, queryTokens)) {
+            const searchableMemos = this.searchableMemos(node.memos);
+
+            if (!this.nodeMatchesAllTokens(node, searchableMemos, queryTokens)) {
                 continue;
             }
 
             const titleScore = this.fieldScore(queryTokens, node.title);
             const descriptionScore = this.fieldScore(queryTokens, node.description);
-            const bestMemo = this.bestMatchingMemo(queryTokens, node.memos);
+            const bestMemo = this.bestMatchingMemo(queryTokens, searchableMemos);
             const edgeScore = this.bestEdgeScore(queryTokens, node.edges);
             let memoScore = 0;
             if (bestMemo) {
@@ -46,7 +49,7 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
         };
     }
 
-    private nodeMatchesAllTokens (node: NodeWithMemos, queryTokens: string[]): boolean {
+    private nodeMatchesAllTokens (node: NodeWithMemos, memos: Memo[], queryTokens: string[]): boolean {
         const surfaceTokens = new Set<string>();
 
         for (const token of this.toTokens(node.title)) {
@@ -57,7 +60,7 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
             surfaceTokens.add(token);
         }
 
-        for (const memo of node.memos) {
+        for (const memo of memos) {
             for (const token of this.toTokens(memo.text)) {
                 surfaceTokens.add(token);
             }
@@ -107,6 +110,7 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
                 best = {
                     id: memo.id,
                     author: memo.author,
+                    type: memo.type,
                     text: memo.text,
                     score,
                     createdAt: memo.createdAt
@@ -115,6 +119,10 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
         }
 
         return best;
+    }
+
+    private searchableMemos (memos: Memo[]): Memo[] {
+        return memos.filter(memo => SEARCHABLE_MEMO_TYPES.includes(memo.type));
     }
 
     private toTokens (text: string): string[] {

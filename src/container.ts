@@ -4,6 +4,7 @@ import { GraphAddController } from '@adapters/controllers/graph/graphAddProjectC
 import { GraphDeleteEdgeController } from '@adapters/controllers/graph/graphDeleteEdgeController.ts';
 import { GraphDeleteNodeController } from '@adapters/controllers/graph/graphDeleteNodeController.ts';
 import { GraphDeleteProjectController } from '@adapters/controllers/graph/graphDeleteProjectController.ts';
+import { GraphEditMemoController } from '@adapters/controllers/graph/graphEditMemoController.ts';
 import { GraphGetNodeController } from '@adapters/controllers/graph/graphGetNodeController.ts';
 import { GraphGetNodesController } from '@adapters/controllers/graph/graphGetNodesController.ts';
 import { GraphGetProjectController } from '@adapters/controllers/graph/graphGetProjectController.ts';
@@ -31,6 +32,7 @@ import { GraphAddUseCase } from '@application/use-cases/graph/graphAddUseCase.ts
 import { GraphDeleteEdgeUseCase } from '@application/use-cases/graph/graphDeleteEdgeUseCase.ts';
 import { GraphDeleteNodeUseCase } from '@application/use-cases/graph/graphDeleteNodeUseCase.ts';
 import { GraphDeleteProjectUseCase } from '@application/use-cases/graph/graphDeleteProjectUseCase.ts';
+import { GraphEditMemoUseCase } from '@application/use-cases/graph/graphEditMemoUseCase.ts';
 import { GraphGetNodeUseCase } from '@application/use-cases/graph/graphGetNodeUseCase.ts';
 import { GraphGetNodesUseCase } from '@application/use-cases/graph/graphGetNodesUseCase.ts';
 import { GraphGetProjectUseCase } from '@application/use-cases/graph/graphGetProjectUseCase.ts';
@@ -131,6 +133,13 @@ export async function graphAppendMemoController (): Promise<GraphAppendMemoContr
     const graphAppendMemoService = new GraphAppendMemoService();
     const graphAppendMemoUseCase = new GraphAppendMemoUseCase(logger, graphAppendMemoService, nodeRepository, memoRepository);
     return new GraphAppendMemoController(logger, graphAppendMemoUseCase);
+}
+
+export async function graphEditMemoController (): Promise<GraphEditMemoController> {
+    const databaseGateway = await database();
+    const memoRepository = new MemoRepository(databaseGateway);
+    const graphEditMemoUseCase = new GraphEditMemoUseCase(logger, memoRepository);
+    return new GraphEditMemoController(logger, graphEditMemoUseCase);
 }
 
 export async function graphSearchNodesController (): Promise<GraphSearchNodesController> {

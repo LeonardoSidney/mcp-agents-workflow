@@ -60,7 +60,7 @@ describe('MCP server - graph-update-node', () => {
     test('updating a node never touches its memos', async () => {
         const graph = await addProject('Memo Untouched Project', 'Project used to verify node updates stay away from memos');
         const node = await addNode(graph.id, 'TASK', 'Memoed and updated task', 'Task updated after a memo was recorded');
-        await addMemo(node.id, 'agent', 'The first recorded thought on this task');
+        await addMemo(node.id, 'agent', 'note', 'The first recorded thought on this task');
 
         const updated = await callTool('graph-update-node', { id: node.id, status: 'in_progress', title: 'Renamed task' });
         expect(updated.isError).toBeFalsy();
