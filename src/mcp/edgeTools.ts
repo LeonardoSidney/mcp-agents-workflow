@@ -3,6 +3,20 @@ import * as z from 'zod/v4';
 import { EDGE_TYPES } from '@domain/constants/edge-types.ts';
 import { graphAddEdgeController, graphDeleteEdgeController, graphUpdateEdgeController } from '@src/container.ts';
 import { objectId } from './objectIdSchema.ts';
+import {
+    GRAPH_ADD_EDGE_DESCRIPTION,
+    GRAPH_ADD_EDGE_DESCRIPTION_FIELD,
+    GRAPH_ADD_EDGE_GRAPH_ID_FIELD,
+    GRAPH_ADD_EDGE_SOURCE_ID_FIELD,
+    GRAPH_ADD_EDGE_TARGET_ID_FIELD,
+    GRAPH_ADD_EDGE_TYPE_FIELD,
+    GRAPH_DELETE_EDGE_DESCRIPTION,
+    GRAPH_DELETE_EDGE_ID_FIELD,
+    GRAPH_UPDATE_EDGE_DESCRIPTION,
+    GRAPH_UPDATE_EDGE_DESCRIPTION_FIELD,
+    GRAPH_UPDATE_EDGE_ID_FIELD,
+    GRAPH_UPDATE_EDGE_TYPE_FIELD
+} from './serverInstructions.ts';
 
 const EDGE_TYPE_VALUES = Object.values(EDGE_TYPES).map(edgeType => edgeType.value);
 
@@ -10,13 +24,13 @@ export function registerEdgeTools (server: McpServer): void {
     server.registerTool(
         'graph-add-edge',
         {
-            description: 'Add a first-class edge to an existing graph, from one node to another of the same graph. Edges are independent of their nodes: creating one never mutates either node. Use the description to record the memory this edge carries: how the target was resolved or the rule that applies',
+            description: GRAPH_ADD_EDGE_DESCRIPTION,
             inputSchema: z.object({
-                graphId: objectId.describe('Graph (project) id this edge belongs to (24-hex ObjectId)'),
-                sourceId: z.string().min(1).describe('Id of the node this edge starts from'),
-                targetId: z.string().min(1).describe('Id of the node this edge points to'),
-                type: z.enum(EDGE_TYPE_VALUES).describe('Edge type'),
-                description: z.string().min(1).optional().describe('Memory recorded on this edge: how the target was resolved or the rule that applies')
+                graphId: objectId.describe(GRAPH_ADD_EDGE_GRAPH_ID_FIELD),
+                sourceId: z.string().min(1).describe(GRAPH_ADD_EDGE_SOURCE_ID_FIELD),
+                targetId: z.string().min(1).describe(GRAPH_ADD_EDGE_TARGET_ID_FIELD),
+                type: z.enum(EDGE_TYPE_VALUES).describe(GRAPH_ADD_EDGE_TYPE_FIELD),
+                description: z.string().min(1).optional().describe(GRAPH_ADD_EDGE_DESCRIPTION_FIELD)
             })
         },
         async ({ graphId, sourceId, targetId, type, description }) => {
@@ -37,11 +51,11 @@ export function registerEdgeTools (server: McpServer): void {
     server.registerTool(
         'graph-update-edge',
         {
-            description: 'Update an existing edge by id. Provide only the fields to change; omitted fields keep their current value. Node fields are never touched by this tool.',
+            description: GRAPH_UPDATE_EDGE_DESCRIPTION,
             inputSchema: z.object({
-                id: objectId.describe('Edge id to update (24-hex ObjectId)'),
-                type: z.enum(EDGE_TYPE_VALUES).optional().describe('New edge type (omit to keep current)'),
-                description: z.string().min(1).optional().describe('New memory recorded on this edge (omit to keep current)')
+                id: objectId.describe(GRAPH_UPDATE_EDGE_ID_FIELD),
+                type: z.enum(EDGE_TYPE_VALUES).optional().describe(GRAPH_UPDATE_EDGE_TYPE_FIELD),
+                description: z.string().min(1).optional().describe(GRAPH_UPDATE_EDGE_DESCRIPTION_FIELD)
             })
         },
         async ({ id, type, description }) => {
@@ -62,9 +76,9 @@ export function registerEdgeTools (server: McpServer): void {
     server.registerTool(
         'graph-delete-edge',
         {
-            description: 'Delete an edge by id. Refuses deletion when the edge is the only reference to its target node, because deleting it would orphan the node',
+            description: GRAPH_DELETE_EDGE_DESCRIPTION,
             inputSchema: z.object({
-                id: objectId.describe('Edge id to delete (24-hex ObjectId)')
+                id: objectId.describe(GRAPH_DELETE_EDGE_ID_FIELD)
             })
         },
         async ({ id }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {

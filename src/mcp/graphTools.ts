@@ -4,6 +4,17 @@ import type { GraphAddControllerResponse } from '@domain/controllers/iGraphAddCo
 import type { GraphDeleteProjectControllerResponse } from '@domain/controllers/iGraphDeleteProjectController.ts';
 import { graphAddController, graphDeleteProjectController, graphGetProjectController, graphGetProjectsController } from '@src/container.ts';
 import { objectId } from './objectIdSchema.ts';
+import {
+    GRAPH_ADD_DESCRIPTION,
+    GRAPH_ADD_DESCRIPTION_FIELD,
+    GRAPH_ADD_NAME_FIELD,
+    GRAPH_DELETE_PROJECT_DESCRIPTION,
+    GRAPH_DELETE_PROJECT_ID_FIELD,
+    GRAPH_GET_PROJECT_DESCRIPTION,
+    GRAPH_GET_PROJECT_ID_FIELD,
+    GRAPH_GET_PROJECT_NAME_FIELD,
+    GRAPH_GET_PROJECTS_DESCRIPTION
+} from './serverInstructions.ts';
 
 function controllerResponseToText (response: GraphAddControllerResponse): string {
     if (response.success && response.project) {
@@ -17,10 +28,10 @@ export function registerGraphTools (server: McpServer): void {
     server.registerTool(
         'graph-add',
         {
-            description: 'Add a new project to the agent workflow graph. Convention: one project per workspace, named after the workspace - create the workspace project here if it does not exist yet. Project names are unique across the store',
+            description: GRAPH_ADD_DESCRIPTION,
             inputSchema: z.object({
-                name: z.string().min(1).describe('Project name'),
-                description: z.string().min(1).describe('Project description')
+                name: z.string().min(1).describe(GRAPH_ADD_NAME_FIELD),
+                description: z.string().min(1).describe(GRAPH_ADD_DESCRIPTION_FIELD)
             })
         },
         async ({ name, description }) => {
@@ -37,7 +48,7 @@ export function registerGraphTools (server: McpServer): void {
     server.registerTool(
         'graph-get-projects',
         {
-            description: 'List all projects in the agent workflow graph. Bootstrap lookup goes through graph-get-project by name; use this listing only to check whether the workspace project exists under a name different from the workspace folder name'
+            description: GRAPH_GET_PROJECTS_DESCRIPTION
         },
         async () => {
             const controller = await graphGetProjectsController();
@@ -57,10 +68,10 @@ export function registerGraphTools (server: McpServer): void {
     server.registerTool(
         'graph-get-project',
         {
-            description: 'Fetch a single project from the agent workflow graph by id (24-hex ObjectId) or by exact name; provide exactly one of the two',
+            description: GRAPH_GET_PROJECT_DESCRIPTION,
             inputSchema: z.object({
-                id: objectId.optional().describe('Project id (24-hex ObjectId)'),
-                name: z.string().min(1).optional().describe('Project name for an exact match. For session bootstrap, pass the workspace folder name: a miss means the project does not exist yet and should be created with graph-add')
+                id: objectId.optional().describe(GRAPH_GET_PROJECT_ID_FIELD),
+                name: z.string().min(1).optional().describe(GRAPH_GET_PROJECT_NAME_FIELD)
             })
         },
         async ({ id, name }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {
@@ -81,9 +92,9 @@ export function registerGraphTools (server: McpServer): void {
     server.registerTool(
         'graph-delete-project',
         {
-            description: 'Delete a project from the agent workflow graph by id (24-hex ObjectId)',
+            description: GRAPH_DELETE_PROJECT_DESCRIPTION,
             inputSchema: z.object({
-                id: objectId.describe('Project id to delete (24-hex ObjectId)')
+                id: objectId.describe(GRAPH_DELETE_PROJECT_ID_FIELD)
             })
         },
         async ({ id }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {

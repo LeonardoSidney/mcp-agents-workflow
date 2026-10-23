@@ -6,6 +6,41 @@ import { NODE_STATUS } from '@domain/constants/node-status.ts';
 import { NODE_TYPES } from '@domain/constants/node-types.ts';
 import { graphAddNodeController, graphAppendMemoController, graphDeleteNodeController, graphEditMemoController, graphGetNodeController, graphGetNodesController, graphSearchNodesController, graphUpdateNodeController } from '@src/container.ts';
 import { objectId } from './objectIdSchema.ts';
+import {
+    GRAPH_ADD_NODE_DESCRIPTION,
+    GRAPH_ADD_NODE_DESCRIPTION_FIELD,
+    GRAPH_ADD_NODE_GRAPH_ID_FIELD,
+    GRAPH_ADD_NODE_STATUS_FIELD,
+    GRAPH_ADD_NODE_TITLE_FIELD,
+    GRAPH_ADD_NODE_TYPE_FIELD,
+    GRAPH_APPEND_MEMO_AUTHOR_FIELD,
+    GRAPH_APPEND_MEMO_DESCRIPTION,
+    GRAPH_APPEND_MEMO_ID_FIELD,
+    GRAPH_APPEND_MEMO_TEXT_FIELD,
+    GRAPH_APPEND_MEMO_TYPE_FIELD,
+    GRAPH_DELETE_NODE_DESCRIPTION,
+    GRAPH_DELETE_NODE_ID_FIELD,
+    GRAPH_EDIT_MEMO_DESCRIPTION,
+    GRAPH_EDIT_MEMO_ID_FIELD,
+    GRAPH_EDIT_MEMO_TYPE_FIELD,
+    GRAPH_GET_NODE_DESCRIPTION,
+    GRAPH_GET_NODE_ID_FIELD,
+    GRAPH_GET_NODE_TYPES_FIELD,
+    GRAPH_GET_NODES_DESCRIPTION,
+    GRAPH_GET_NODES_GRAPH_ID_FIELD,
+    GRAPH_GET_NODES_LIMIT_FIELD,
+    GRAPH_GET_NODES_STATUS_FIELD,
+    GRAPH_GET_NODES_TYPE_FIELD,
+    GRAPH_SEARCH_NODES_DESCRIPTION,
+    GRAPH_SEARCH_NODES_GRAPH_ID_FIELD,
+    GRAPH_SEARCH_NODES_LIMIT_FIELD,
+    GRAPH_SEARCH_NODES_TEXT_FIELD,
+    GRAPH_UPDATE_NODE_DESCRIPTION,
+    GRAPH_UPDATE_NODE_DESCRIPTION_FIELD,
+    GRAPH_UPDATE_NODE_ID_FIELD,
+    GRAPH_UPDATE_NODE_STATUS_FIELD,
+    GRAPH_UPDATE_NODE_TITLE_FIELD
+} from './serverInstructions.ts';
 
 const NODE_TYPE_VALUES = Object.values(NODE_TYPES).map(nodeType => nodeType.value);
 const NODE_STATUS_VALUES = Object.values(NODE_STATUS).map(nodeStatus => nodeStatus.value);
@@ -16,13 +51,13 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-add-node',
         {
-            description: 'Add a new node to an existing graph. Nodes, edges and memos are independent: after creating the node, use graph-add-edge to connect it to other nodes of the same graph and record the memory on the edge, and graph-append-memo to record the discussion happening on the node',
+            description: GRAPH_ADD_NODE_DESCRIPTION,
             inputSchema: z.object({
-                graphId: objectId.describe('Graph (project) id this node belongs to (24-hex ObjectId)'),
-                type: z.enum(NODE_TYPE_VALUES).describe('Node type'),
-                title: z.string().min(1).describe('Node title: short (under 10 words) and unique within the graph, carrying the searchable tokens of the work (e.g. "invoice export finance validation"), no filler'),
-                description: z.string().min(1).describe('Node description: 1-2 short lines packing the key tokens a future search would use (problem, technologies, domain terms). Keep long detail out here - it belongs in memos'),
-                status: z.enum(NODE_STATUS_VALUES).describe('Initial node status').default('pending')
+                graphId: objectId.describe(GRAPH_ADD_NODE_GRAPH_ID_FIELD),
+                type: z.enum(NODE_TYPE_VALUES).describe(GRAPH_ADD_NODE_TYPE_FIELD),
+                title: z.string().min(1).describe(GRAPH_ADD_NODE_TITLE_FIELD),
+                description: z.string().min(1).describe(GRAPH_ADD_NODE_DESCRIPTION_FIELD),
+                status: z.enum(NODE_STATUS_VALUES).describe(GRAPH_ADD_NODE_STATUS_FIELD).default('pending')
             })
         },
         async ({ graphId, type, title, description, status }) => {
@@ -43,12 +78,12 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-append-memo',
         {
-            description: 'Append a memo to an existing node: one entry of the discussion recorded on the node, with the author and the type declared by the caller. Memos survive the node being completed and are exposed on the node by graph-get-node and graph-get-nodes; graph-search-nodes indexes only "resolution" and "directive" memos. Reclassify an existing memo with graph-edit-memo',
+            description: GRAPH_APPEND_MEMO_DESCRIPTION,
             inputSchema: z.object({
-                id: objectId.describe('Node id to append the memo to (24-hex ObjectId)'),
-                author: z.enum(MEMO_AUTHOR_VALUES).describe('Speaker of this memo, not the one typing it: "agent" for the agent, "user" for a rule or clarification provided by the user, "system" for the orchestration layer'),
-                type: z.enum(MEMO_TYPE_VALUES).describe('Type of this memo: "note" for ephemeral working state that is not searchable, "resolution" for a confirmed answer that is searchable, "directive" for a rule future work must respect that is searchable'),
-                text: z.string().min(1).describe('Memo text: what was discussed, the difficulty met, or the rule that applies')
+                id: objectId.describe(GRAPH_APPEND_MEMO_ID_FIELD),
+                author: z.enum(MEMO_AUTHOR_VALUES).describe(GRAPH_APPEND_MEMO_AUTHOR_FIELD),
+                type: z.enum(MEMO_TYPE_VALUES).describe(GRAPH_APPEND_MEMO_TYPE_FIELD),
+                text: z.string().min(1).describe(GRAPH_APPEND_MEMO_TEXT_FIELD)
             })
         },
         async ({ id, author, type, text }) => {
@@ -71,10 +106,10 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-edit-memo',
         {
-            description: 'Reclassify the type of an existing memo by id (24-hex ObjectId). The memo text and author are immutable and never change; use it to fix the type of a memo (e.g. promote a "note" that turned out to be a reusable "resolution" or a "directive")',
+            description: GRAPH_EDIT_MEMO_DESCRIPTION,
             inputSchema: z.object({
-                id: objectId.describe('Memo id to reclassify (24-hex ObjectId)'),
-                type: z.enum(MEMO_TYPE_VALUES).describe('New memo type: "note" (not searchable), "resolution" (searchable) or "directive" (searchable)')
+                id: objectId.describe(GRAPH_EDIT_MEMO_ID_FIELD),
+                type: z.enum(MEMO_TYPE_VALUES).describe(GRAPH_EDIT_MEMO_TYPE_FIELD)
             })
         },
         async ({ id, type }) => {
@@ -95,12 +130,12 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-get-nodes',
         {
-            description: 'List the nodes of a graph (project), ordered by the most recently updated first, optionally filtered by type and status and capped by a limit. Returns node and outgoing edge descriptions only - never memo text; read the discussion of a node with graph-get-node. Outgoing edges are self-describing: each edge carries the target node title, so the list is legible without extra fetches',
+            description: GRAPH_GET_NODES_DESCRIPTION,
             inputSchema: z.object({
-                graphId: objectId.describe('Graph (project) id whose nodes should be listed (24-hex ObjectId)'),
-                type: z.enum(NODE_TYPE_VALUES).optional().describe('Only return nodes of this type (omit for all types)'),
-                status: z.enum(NODE_STATUS_VALUES).optional().describe('Only return nodes with this status (omit for all statuses)'),
-                limit: z.number().int().positive().optional().describe('Maximum number of nodes to return (omit for no limit)')
+                graphId: objectId.describe(GRAPH_GET_NODES_GRAPH_ID_FIELD),
+                type: z.enum(NODE_TYPE_VALUES).optional().describe(GRAPH_GET_NODES_TYPE_FIELD),
+                status: z.enum(NODE_STATUS_VALUES).optional().describe(GRAPH_GET_NODES_STATUS_FIELD),
+                limit: z.number().int().positive().optional().describe(GRAPH_GET_NODES_LIMIT_FIELD)
             })
         },
         async ({ graphId, type, status, limit }) => {
@@ -121,10 +156,10 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-get-node',
         {
-            description: 'Fetch a single node from the agent workflow graph by id (24-hex ObjectId). Memos can be filtered by type with types (e.g. ["resolution", "directive"] to read only the reusable memory). Outgoing edges are self-describing: each edge carries the target node title',
+            description: GRAPH_GET_NODE_DESCRIPTION,
             inputSchema: z.object({
-                id: objectId.describe('Node id (24-hex ObjectId)'),
-                types: z.array(z.enum(MEMO_TYPE_VALUES)).min(1).optional().describe('Only return memos of these types (e.g. ["resolution", "directive"]); omit for all memos')
+                id: objectId.describe(GRAPH_GET_NODE_ID_FIELD),
+                types: z.array(z.enum(MEMO_TYPE_VALUES)).min(1).optional().describe(GRAPH_GET_NODE_TYPES_FIELD)
             })
         },
         async ({ id, types }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {
@@ -145,11 +180,11 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-search-nodes',
         {
-            description: 'Search the nodes of a graph (project) by text across title, description, and reusable memory: the node outgoing edge descriptions and memos typed "resolution" or "directive" ("note" memos are never indexed), ranked by similarity. Tokens are conjunctive (AND): a node is returned only when its searchable text (title, description, resolved/directive memos and outgoing edge descriptions combined) contains every token of the query, so more tokens make the search stricter. Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); a token absent from a node disqualifies it, so keep the query short or cap the result count with limit. Each hit carries the full text of the single best-matching memo of the node as bestMemo (omitted when no memo matches); the rest of the discussion of a node is read with graph-get-node. The outgoing edges of a hit are self-describing: each edge carries the target node title.',
+            description: GRAPH_SEARCH_NODES_DESCRIPTION,
             inputSchema: z.object({
-                graphId: objectId.describe('Graph (project) id whose nodes should be searched (24-hex ObjectId)'),
-                text: z.string().min(1).describe('Text to match across title, description, and memories (outgoing edge descriptions) as short meaningful tokens; tokens are ANDed together, so a node is only returned when it contains every token'),
-                limit: z.number().int().positive().optional().describe('Maximum number of results to return (omit for no limit)')
+                graphId: objectId.describe(GRAPH_SEARCH_NODES_GRAPH_ID_FIELD),
+                text: z.string().min(1).describe(GRAPH_SEARCH_NODES_TEXT_FIELD),
+                limit: z.number().int().positive().optional().describe(GRAPH_SEARCH_NODES_LIMIT_FIELD)
             })
         },
         async ({ graphId, text, limit }) => {
@@ -170,12 +205,12 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-update-node',
         {
-            description: 'Update an existing node by id (24-hex ObjectId). Provide only the fields to change; omitted fields keep their current value. Edges are independent of nodes: updating a node never touches its edges, and node type cannot be changed.',
+            description: GRAPH_UPDATE_NODE_DESCRIPTION,
             inputSchema: z.object({
-                id: objectId.describe('Node id to update (24-hex ObjectId)'),
-                title: z.string().min(1).optional().describe('New node title (omit to keep current)'),
-                description: z.string().min(1).optional().describe('New node description (omit to keep current)'),
-                status: z.enum(NODE_STATUS_VALUES).optional().describe('New node status (omit to keep current)')
+                id: objectId.describe(GRAPH_UPDATE_NODE_ID_FIELD),
+                title: z.string().min(1).optional().describe(GRAPH_UPDATE_NODE_TITLE_FIELD),
+                description: z.string().min(1).optional().describe(GRAPH_UPDATE_NODE_DESCRIPTION_FIELD),
+                status: z.enum(NODE_STATUS_VALUES).optional().describe(GRAPH_UPDATE_NODE_STATUS_FIELD)
             })
         },
         async ({ id, title, description, status }) => {
@@ -196,9 +231,9 @@ export function registerNodeTools (server: McpServer): void {
     server.registerTool(
         'graph-delete-node',
         {
-            description: 'Delete a node from the agent workflow graph by id (24-hex ObjectId). Refuses deletion while any edge is attached to the node (incoming or outgoing), because deleting it would erase the recorded graph memory; delete those edges first with graph-delete-edge',
+            description: GRAPH_DELETE_NODE_DESCRIPTION,
             inputSchema: z.object({
-                id: objectId.describe('Node id to delete (24-hex ObjectId)')
+                id: objectId.describe(GRAPH_DELETE_NODE_ID_FIELD)
             })
         },
         async ({ id }): Promise<{ content: { type: 'text'; text: string; }[]; isError: boolean; }> => {
