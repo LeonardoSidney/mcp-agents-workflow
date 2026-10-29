@@ -70,6 +70,8 @@ A **node** is one unit of knowledge or work. Nodes come in 22 typed flavors, inc
 
 Each node has a type, title, description and a lifecycle status (`pending` → `in_progress` → `in_validation` → `completed`): work moves through validation before it counts as done. A node can also be anchored to code: `paths` lists the workspace-relative files or directories it is about, and `commit` records the git SHA at which it was verified, so `git log <commit>..HEAD -- <paths>` tells a reader whether that code changed since. A node's type is immutable after creation; its title, description, status, paths and commit can be updated.
 
+For analytics (e.g. Metabase), every node document also keeps usage counters that are never sent to the model: `search_hit_count` / `last_search_hit_at` grow each time the node is returned by `graph-search-nodes` (after `limit`), and `get_count` / `last_get_at` each time it is fetched with `graph-get-node`. Listings and internal reads do not count, and none of them touch `updated_at`.
+
 ### Edges
 
 An **edge** is a typed, first-class relationship between two nodes of the same graph — and the place where _how_ something was resolved is recorded in its description. There are 23 edge types covering structure (`CONTAINS`, `PART_OF`), causality (`DERIVED_FROM`, `AFFECTS`), resolution (`SOLVED_BY`, `ANSWERS`, `VALIDATES`, `INVALIDATES`), attribution (`CREATED_BY`, `ASSIGNED_TO`, `DISCOVERED_BY`), and decision flow (`SUPERSEDES`, `REJECTED`, `CONSTRAINED_BY`, `CONFLICTS_WITH`, `USER_VALIDATE`, …). When a node is read, its outgoing edges come back as references that carry the target node titles — an edge is self-describing, so a reader judges relevance from the edge type, target title and description without an extra fetch per target.

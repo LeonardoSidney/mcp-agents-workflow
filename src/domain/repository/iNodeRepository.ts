@@ -9,6 +9,8 @@ export interface INodeRepository {
     getNodesWithMemos (params: GetNodesRepositoryParams): Promise<NodeWithMemos[]>;
     updateNode (params: UpdateNodeRepositoryParams): Promise<boolean>;
     deleteNode (params: DeleteNodeRepositoryParams): Promise<boolean>;
+    recordGet (params: RecordGetRepositoryParams): Promise<void>;
+    recordSearchHits (params: RecordSearchHitsRepositoryParams): Promise<void>;
     listAttachedEdgeIds (params: ListAttachedEdgeIdsRepositoryParams): Promise<string[]>;
 }
 
@@ -33,6 +35,14 @@ export type UpdateNodeRepositoryParams = {
 
 export type DeleteNodeRepositoryParams = {
     id: string;
+};
+
+export type RecordGetRepositoryParams = {
+    id: string;
+};
+
+export type RecordSearchHitsRepositoryParams = {
+    ids: string[];
 };
 
 export type ListAttachedEdgeIdsRepositoryParams = {

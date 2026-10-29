@@ -34,6 +34,8 @@ export class GraphGetNodeUseCase implements IGraphGetNodeUseCase {
             };
         }
 
+        await this.nodeRepository.recordGet({ id: node.id });
+
         return {
             success: true,
             node: this.filterMemos(node, params.types)

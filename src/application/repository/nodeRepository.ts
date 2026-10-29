@@ -1,4 +1,4 @@
-import type { INodeRepository, AddNodeRepositoryParams, DeleteNodeRepositoryParams, GetNodeRepositoryParams, GetNodesRepositoryParams, ListAttachedEdgeIdsRepositoryParams, UpdateNodeRepositoryParams } from '@domain/repository/iNodeRepository.ts';
+import type { INodeRepository, AddNodeRepositoryParams, DeleteNodeRepositoryParams, GetNodeRepositoryParams, GetNodesRepositoryParams, ListAttachedEdgeIdsRepositoryParams, RecordGetRepositoryParams, RecordSearchHitsRepositoryParams, UpdateNodeRepositoryParams } from '@domain/repository/iNodeRepository.ts';
 import type { NodeWithEdges, NodeWithMemos } from '@domain/entities/node.ts';
 import type { EdgeReference } from '@domain/entities/edge.ts';
 import { toEdgeReference } from '@domain/entities/edge.ts';
@@ -71,6 +71,14 @@ export class NodeRepository implements INodeRepository {
 
     async deleteNode (params: DeleteNodeRepositoryParams): Promise<boolean> {
         return this.databaseGateway.deleteNode({ id: params.id });
+    }
+
+    async recordGet (params: RecordGetRepositoryParams): Promise<void> {
+        await this.databaseGateway.recordNodeGet({ id: params.id });
+    }
+
+    async recordSearchHits (params: RecordSearchHitsRepositoryParams): Promise<void> {
+        await this.databaseGateway.recordNodeSearchHits({ ids: params.ids });
     }
 
     async listAttachedEdgeIds (params: ListAttachedEdgeIdsRepositoryParams): Promise<string[]> {

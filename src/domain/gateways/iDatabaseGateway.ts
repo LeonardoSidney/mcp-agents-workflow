@@ -14,6 +14,8 @@ export interface IDatabaseGateway {
     listNodes (params: ListNodesGatewayParams): Promise<NodeDocument[]>;
     listNodesByIds (params: ListNodesByIdsGatewayParams): Promise<NodeDocument[]>;
     deleteNode (params: DeleteNodeGatewayParams): Promise<boolean>;
+    recordNodeGet (params: RecordNodeGetGatewayParams): Promise<void>;
+    recordNodeSearchHits (params: RecordNodeSearchHitsGatewayParams): Promise<void>;
     addEdge (params: AddEdgeGatewayParams): Promise<void>;
     updateEdge (params: UpdateEdgeGatewayParams): Promise<boolean>;
     listEdge (params: ListEdgeGatewayParams): Promise<EdgeDocument | null>;
@@ -73,6 +75,14 @@ export type ListNodesByIdsGatewayParams = {
 
 export type DeleteNodeGatewayParams = {
     id: string;
+};
+
+export type RecordNodeGetGatewayParams = {
+    id: string;
+};
+
+export type RecordNodeSearchHitsGatewayParams = {
+    ids: string[];
 };
 
 export type ProjectDocument = {

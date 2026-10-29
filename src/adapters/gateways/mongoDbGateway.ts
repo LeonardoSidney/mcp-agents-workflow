@@ -21,6 +21,8 @@ import type {
     EdgeDocument,
     MemoDocument,
     ProjectDocument,
+    RecordNodeGetGatewayParams,
+    RecordNodeSearchHitsGatewayParams,
     UpdateEdgeGatewayParams,
     UpdateNodeGatewayParams,
     AddMemoGatewayParams,
@@ -48,6 +50,10 @@ export type RawNodeDocument = {
     description: string;
     paths?: string[];
     commit?: string;
+    search_hit_count?: number;
+    last_search_hit_at?: Date;
+    get_count?: number;
+    last_get_at?: Date;
     created_at: Date;
     updated_at: Date;
     deleted_at?: Date;
@@ -140,7 +146,7 @@ export class MongoDBGateway implements IDatabaseGateway {
     async addNode (params: AddNodeGatewayParams): Promise<void> {
         const collection = this.client.db().collection<RawNodeDocument>('nodes');
 
-        await collection.insertOne(this.toRawNode(params.node));
+        await collection.insertOne({ ...this.toRawNode(params.node), search_hit_count: 0, get_count: 0 });
     }
 
     async updateNode (params: UpdateNodeGatewayParams): Promise<boolean> {
@@ -216,6 +222,28 @@ export class MongoDBGateway implements IDatabaseGateway {
         );
 
         return result.matchedCount > 0;
+    }
+
+    async recordNodeGet (params: RecordNodeGetGatewayParams): Promise<void> {
+        const collection = this.client.db().collection<RawNodeDocument>('nodes');
+
+        await collection.updateOne(
+            { _id: new ObjectId(params.id), deleted_at: { $exists: false } },
+            { $inc: { get_count: 1 }, $set: { last_get_at: new Date() } }
+        );
+    }
+
+    async recordNodeSearchHits (params: RecordNodeSearchHitsGatewayParams): Promise<void> {
+        if (params.ids.length === 0) {
+            return;
+        }
+
+        const collection = this.client.db().collection<RawNodeDocument>('nodes');
+
+        await collection.updateMany(
+            { _id: { $in: params.ids.map(id => new ObjectId(id)) }, deleted_at: { $exists: false } },
+            { $inc: { search_hit_count: 1 }, $set: { last_search_hit_at: new Date() } }
+        );
     }
 
     async addEdge (params: AddEdgeGatewayParams): Promise<void> {

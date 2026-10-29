@@ -65,6 +65,8 @@ export class GraphSearchNodesUseCase implements IGraphSearchNodesUseCase {
         const ordered = this.order(scored.results);
         const results = params.limit ? ordered.slice(0, params.limit) : ordered;
 
+        await this.nodeRepository.recordSearchHits({ ids: results.map(result => result.node.id) });
+
         return {
             success: true,
             results
