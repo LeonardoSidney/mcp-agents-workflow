@@ -17,6 +17,8 @@ export class GraphUpdateNodeService implements IGraphUpdateNodeService {
         const title = params.title ?? node.title;
         const description = params.description ?? node.description;
         const status = params.status ?? node.status;
+        const paths = params.paths ?? node.paths;
+        const commit = params.commit ?? node.commit;
 
         const updated: Node = {
             id: node.id,
@@ -25,9 +27,14 @@ export class GraphUpdateNodeService implements IGraphUpdateNodeService {
             status,
             title,
             description,
+            paths,
             createdAt: node.createdAt,
             updatedAt: now
         };
+
+        if (commit) {
+            updated.commit = commit;
+        }
 
         return {
             success: true,

@@ -22,6 +22,7 @@ function buildNode (partial: Partial<NodeWithMemos> & { id: string; title: strin
         status: 'pending',
         title: partial.title,
         description: partial.description ?? '',
+        paths: partial.paths ?? [],
         createdAt: now,
         updatedAt: now,
         edges: partial.edges ?? [],

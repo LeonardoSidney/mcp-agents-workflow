@@ -26,6 +26,9 @@ talk and for questions answerable from what is already in front of you.
 - Query with 1-3 short English tokens naming the domain, component or
   problem (e.g. "search tokens", "memo types"). Tokens are ANDed, so
   fewer tokens find more.
+- When the work centers on specific files, also search by path (e.g.
+  path "src/mcp", with or without text) to find what is known about
+  that code.
 - An empty result is normal. Do not fall back to listing every node.
 - Open a hit with graph-get-node only when its title or edges suggest it
   matters; pass types ["resolution", "directive"] to skip working notes.
@@ -61,6 +64,9 @@ at milestones, not at every step.
   search does not translate.
 - Title under 10 words carrying the tokens a future search would use;
   description in 1-2 lines. Detail and chronology belong in memos.
+- When the knowledge is tied to specific code, set paths (workspace-
+  relative files or directories) and commit (git rev-parse --short HEAD)
+  on the node.
 - A memo's author is its speaker: "user" for what the user said, "agent"
   for your own findings. Its type is "note" (working state, not
   searchable), "resolution" (confirmed answer, searchable) or
@@ -76,6 +82,11 @@ at milestones, not at every step.
 When recalled knowledge is outdated, record the current truth in a node
 and link it to the outdated one with SUPERSEDES, explaining the change in
 the edge description. Never leave two contradicting nodes unlinked.
+
+A node carrying paths and commit can be checked cheaply: any commit
+listed by git log --oneline <commit>..HEAD -- <paths> changed that code
+after the knowledge was verified, so check the code before relying on
+the node, then refresh its commit or supersede it.
 
 ## Failures
 
@@ -103,6 +114,8 @@ export const GRAPH_ADD_NODE_TYPE_FIELD = 'Node type';
 export const GRAPH_ADD_NODE_TITLE_FIELD = 'Node title: short (under 10 words) and unique within the graph, carrying the searchable tokens of the work (e.g. "invoice export finance validation"), no filler';
 export const GRAPH_ADD_NODE_DESCRIPTION_FIELD = 'Node description: 1-2 short lines packing the key tokens a future search would use (problem, technologies, domain terms). Keep long detail out here - it belongs in memos';
 export const GRAPH_ADD_NODE_STATUS_FIELD = 'Initial node status';
+export const GRAPH_ADD_NODE_PATHS_FIELD = 'Workspace-relative files or directories this node is about (e.g. ["src/mcp/nodeTools.ts", "src/domain"]), so graph-search-nodes can find it by path. Set them when the knowledge is tied to specific code';
+export const GRAPH_ADD_NODE_COMMIT_FIELD = 'Git commit SHA (7-40 hex, e.g. the output of git rev-parse --short HEAD) at which this knowledge was verified, so a later reader can check with git log <commit>..HEAD -- <paths> whether those files changed since';
 
 export const GRAPH_APPEND_MEMO_DESCRIPTION = 'Append a memo to an existing node: one entry of the discussion recorded on the node, with the author and the type declared by the caller. Memos survive the node being completed and are exposed on the node by graph-get-node and graph-get-nodes; graph-search-nodes indexes only "resolution" and "directive" memos. Reclassify an existing memo with graph-edit-memo';
 export const GRAPH_APPEND_MEMO_ID_FIELD = 'Node id to append the memo to (24-hex ObjectId)';
@@ -124,9 +137,10 @@ export const GRAPH_GET_NODE_DESCRIPTION = 'Fetch a single node from the agent wo
 export const GRAPH_GET_NODE_ID_FIELD = 'Node id (24-hex ObjectId)';
 export const GRAPH_GET_NODE_TYPES_FIELD = 'Only return memos of these types (e.g. ["resolution", "directive"]); omit for all memos';
 
-export const GRAPH_SEARCH_NODES_DESCRIPTION = 'Search the nodes of a graph (project) by text across title, description, and reusable memory: the node outgoing edge descriptions and memos typed "resolution" or "directive" ("note" memos are never indexed), ranked by similarity. Tokens are conjunctive (AND): a node is returned only when its searchable text (title, description, resolved/directive memos and outgoing edge descriptions combined) contains every token of the query, so more tokens make the search stricter. Regular plurals are folded on both sides, so "instructions" matches "instruction" and "queries" matches "query". Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); a token absent from a node disqualifies it, so keep the query short or cap the result count with limit. Each hit carries the full text of the single best-matching memo of the node as bestMemo (omitted when no memo matches); the rest of the discussion of a node is read with graph-get-node. The outgoing edges of a hit are self-describing: each edge carries the target node title.';
+export const GRAPH_SEARCH_NODES_DESCRIPTION = 'Search the nodes of a graph (project) by text across title, description, and reusable memory: the node outgoing edge descriptions and memos typed "resolution" or "directive" ("note" memos are never indexed), ranked by similarity. Tokens are conjunctive (AND): a node is returned only when its searchable text (title, description, resolved/directive memos and outgoing edge descriptions combined) contains every token of the query, so more tokens make the search stricter. Pass path to keep only nodes anchored to a file or directory, alone or combined with text. Regular plurals are folded on both sides, so "instructions" matches "instruction" and "queries" matches "query". Each result exposes titleScore, descriptionScore, memoryScore and the combined score. Use short meaningful tokens without articles or connectivities from any language (e.g. "calculo vale refeicao", not "calculo do vale refeicao"); a token absent from a node disqualifies it, so keep the query short or cap the result count with limit. Each hit carries the full text of the single best-matching memo of the node as bestMemo (omitted when no memo matches); the rest of the discussion of a node is read with graph-get-node. The outgoing edges of a hit are self-describing: each edge carries the target node title.';
 export const GRAPH_SEARCH_NODES_GRAPH_ID_FIELD = 'Graph (project) id whose nodes should be searched (24-hex ObjectId)';
-export const GRAPH_SEARCH_NODES_TEXT_FIELD = 'Text to match across title, description, and memories (outgoing edge descriptions) as short meaningful tokens; tokens are ANDed together, so a node is only returned when it contains every token';
+export const GRAPH_SEARCH_NODES_TEXT_FIELD = 'Text to match across title, description, and memories (outgoing edge descriptions) as short meaningful tokens; tokens are ANDed together, so a node is only returned when it contains every token. Optional when path is given';
+export const GRAPH_SEARCH_NODES_PATH_FIELD = 'Workspace-relative file or directory: only nodes anchored to it are returned - the same path, a file inside a directory node path, or a node path inside a directory query (e.g. "src/mcp" finds nodes about src/mcp/nodeTools.ts). Combine with text to narrow further, or pass it alone to list what is known about that code';
 export const GRAPH_SEARCH_NODES_LIMIT_FIELD = 'Maximum number of results to return (omit for no limit)';
 
 export const GRAPH_UPDATE_NODE_DESCRIPTION = 'Update an existing node by id (24-hex ObjectId). Provide only the fields to change; omitted fields keep their current value. Edges are independent of nodes: updating a node never touches its edges, and node type cannot be changed.';
@@ -134,6 +148,8 @@ export const GRAPH_UPDATE_NODE_ID_FIELD = 'Node id to update (24-hex ObjectId)';
 export const GRAPH_UPDATE_NODE_TITLE_FIELD = 'New node title (omit to keep current)';
 export const GRAPH_UPDATE_NODE_DESCRIPTION_FIELD = 'New node description (omit to keep current)';
 export const GRAPH_UPDATE_NODE_STATUS_FIELD = 'New node status (omit to keep current)';
+export const GRAPH_UPDATE_NODE_PATHS_FIELD = 'New workspace-relative files or directories this node is about, replacing the current list; pass [] to clear (omit to keep current)';
+export const GRAPH_UPDATE_NODE_COMMIT_FIELD = 'New git commit SHA (7-40 hex) at which this knowledge was last verified (omit to keep current)';
 
 export const GRAPH_DELETE_NODE_DESCRIPTION = 'Delete a node from the agent workflow graph by id (24-hex ObjectId). Refuses deletion while any edge is attached to the node (incoming or outgoing), because deleting it would erase the recorded graph memory; delete those edges first with graph-delete-edge';
 export const GRAPH_DELETE_NODE_ID_FIELD = 'Node id to delete (24-hex ObjectId)';

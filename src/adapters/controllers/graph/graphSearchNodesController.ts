@@ -21,9 +21,9 @@ export class GraphSearchNodesController implements IGraphSearchNodesController {
     async handle (params: GraphSearchNodesControllerParams): Promise<GraphSearchNodesControllerResponse> {
         this.logger.info('Executing GraphSearchNodesController::handle', params);
 
-        const { graphId, text, limit } = params;
+        const { graphId, text, path, limit } = params;
 
-        const response = await this.useCase.execute({ graphId, text, limit });
+        const response = await this.useCase.execute({ graphId, text, path, limit });
 
         if (!response.success || !response.results) {
             const result = {

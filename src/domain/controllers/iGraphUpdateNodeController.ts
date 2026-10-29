@@ -10,6 +10,8 @@ export type GraphUpdateNodeControllerParams = {
     title?: string;
     description?: string;
     status?: NodeStatus;
+    paths?: string[];
+    commit?: string;
 };
 
 export type GraphUpdateNodeControllerResponse = {

@@ -1,4 +1,5 @@
 import type { ILogger } from '@domain/logger.ts';
+import type { IGraphNodeAnchorService } from '@domain/services/iGraphNodeAnchorService.ts';
 import type { IGraphUpdateNodeService } from '@domain/services/iGraphUpdateNodeService.ts';
 import type { INodeRepository } from '@domain/repository/iNodeRepository.ts';
 import type { GraphUpdateNodeUseCaseParams, GraphUpdateNodeUseCaseResponse, IGraphUpdateNodeUseCase } from '@domain/use-cases/iGraphUpdateNodeUseCase.ts';
@@ -6,15 +7,18 @@ import type { GraphUpdateNodeUseCaseParams, GraphUpdateNodeUseCaseResponse, IGra
 export class GraphUpdateNodeUseCase implements IGraphUpdateNodeUseCase {
     private readonly logger: ILogger;
     private readonly graphUpdateNodeService: IGraphUpdateNodeService;
+    private readonly graphNodeAnchorService: IGraphNodeAnchorService;
     private readonly nodeRepository: INodeRepository;
 
     constructor (
         logger: ILogger,
         graphUpdateNodeService: IGraphUpdateNodeService,
+        graphNodeAnchorService: IGraphNodeAnchorService,
         nodeRepository: INodeRepository
     ) {
         this.logger = logger;
         this.graphUpdateNodeService = graphUpdateNodeService;
+        this.graphNodeAnchorService = graphNodeAnchorService;
         this.nodeRepository = nodeRepository;
     }
 
@@ -26,6 +30,14 @@ export class GraphUpdateNodeUseCase implements IGraphUpdateNodeUseCase {
             return {
                 success: false,
                 error: validationError
+            };
+        }
+
+        const anchors = this.graphNodeAnchorService.normalizeAnchors({ paths: params.paths, commit: params.commit });
+        if (!anchors.success) {
+            return {
+                success: false,
+                error: anchors.error ?? 'Invalid node anchors'
             };
         }
 
@@ -41,7 +53,9 @@ export class GraphUpdateNodeUseCase implements IGraphUpdateNodeUseCase {
             node,
             title: params.title,
             description: params.description,
-            status: params.status
+            status: params.status,
+            paths: anchors.paths,
+            commit: anchors.commit
         });
         if (!mapped.success || !mapped.node) {
             return {
@@ -71,7 +85,9 @@ export class GraphUpdateNodeUseCase implements IGraphUpdateNodeUseCase {
 
         if (params.title === undefined
             && params.description === undefined
-            && params.status === undefined) {
+            && params.status === undefined
+            && params.paths === undefined
+            && params.commit === undefined) {
             return 'At least one field must be provided to update a node';
         }
 

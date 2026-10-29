@@ -11,6 +11,8 @@ export type Node = {
     status: NodeStatus;
     title: string;
     description: string;
+    paths: string[];
+    commit?: string;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -22,6 +24,8 @@ export type NodeWithMemos = {
     status: NodeStatus;
     title: string;
     description: string;
+    paths: string[];
+    commit?: string;
     createdAt: Date;
     updatedAt: Date;
     edges: EdgeReference[];
@@ -35,6 +39,8 @@ export type NodeWithEdges = {
     status: NodeStatus;
     title: string;
     description: string;
+    paths: string[];
+    commit?: string;
     createdAt: Date;
     updatedAt: Date;
     edges: EdgeReference[];
@@ -47,6 +53,8 @@ export type NodeSummary = {
     status: NodeStatus;
     title: string;
     description: string;
+    paths?: string[];
+    commit?: string;
 };
 
 export type NodeSummaryWithEdges = {
@@ -56,6 +64,8 @@ export type NodeSummaryWithEdges = {
     status: NodeStatus;
     title: string;
     description: string;
+    paths?: string[];
+    commit?: string;
     edges: EdgeReference[];
 };
 
@@ -66,12 +76,14 @@ export type NodeSummaryWithMemos = {
     status: NodeStatus;
     title: string;
     description: string;
+    paths?: string[];
+    commit?: string;
     edges: EdgeReference[];
     memos: MemoSummary[];
 };
 
 export function toNodeSummary (node: Node): NodeSummary {
-    return {
+    const summary: NodeSummary = {
         id: node.id,
         graphId: node.graphId,
         type: node.type,
@@ -79,6 +91,16 @@ export function toNodeSummary (node: Node): NodeSummary {
         title: node.title,
         description: node.description
     };
+
+    if (node.paths.length > 0) {
+        summary.paths = node.paths;
+    }
+
+    if (node.commit) {
+        summary.commit = node.commit;
+    }
+
+    return summary;
 }
 
 export function toNodeSummaryWithEdges (node: NodeWithEdges): NodeSummaryWithEdges {

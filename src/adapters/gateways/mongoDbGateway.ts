@@ -46,6 +46,8 @@ export type RawNodeDocument = {
     status: string;
     title: string;
     description: string;
+    paths?: string[];
+    commit?: string;
     created_at: Date;
     updated_at: Date;
     deleted_at?: Date;
@@ -145,14 +147,19 @@ export class MongoDBGateway implements IDatabaseGateway {
         const collection = this.client.db().collection<RawNodeDocument>('nodes');
         const node = params.node;
 
-        const update = {
-            $set: {
-                status: node.status,
-                title: node.title,
-                description: node.description,
-                updated_at: node.updated_at
-            }
+        const fields: Partial<RawNodeDocument> = {
+            status: node.status,
+            title: node.title,
+            description: node.description,
+            paths: node.paths ?? [],
+            updated_at: node.updated_at
         };
+
+        if (node.commit) {
+            fields.commit = node.commit;
+        }
+
+        const update = { $set: fields };
 
         const result = await collection.updateOne({ _id: new ObjectId(node._id), deleted_at: { $exists: false } }, update);
 

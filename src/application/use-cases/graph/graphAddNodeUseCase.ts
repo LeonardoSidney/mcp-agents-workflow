@@ -1,5 +1,6 @@
 import type { ILogger } from '@domain/logger.ts';
 import type { IGraphAddNodeService } from '@domain/services/iGraphAddNodeService.ts';
+import type { IGraphNodeAnchorService } from '@domain/services/iGraphNodeAnchorService.ts';
 import type { IProjectRepository } from '@domain/repository/iProjectRepository.ts';
 import type { INodeRepository } from '@domain/repository/iNodeRepository.ts';
 import type { GraphAddNodeUseCaseParams, GraphAddNodeUseCaseResponse, IGraphAddNodeUseCase } from '@domain/use-cases/iGraphAddNodeUseCase.ts';
@@ -7,17 +8,20 @@ import type { GraphAddNodeUseCaseParams, GraphAddNodeUseCaseResponse, IGraphAddN
 export class GraphAddNodeUseCase implements IGraphAddNodeUseCase {
     private readonly logger: ILogger;
     private readonly graphAddNodeService: IGraphAddNodeService;
+    private readonly graphNodeAnchorService: IGraphNodeAnchorService;
     private readonly projectRepository: IProjectRepository;
     private readonly nodeRepository: INodeRepository;
 
     constructor (
         logger: ILogger,
         graphAddNodeService: IGraphAddNodeService,
+        graphNodeAnchorService: IGraphNodeAnchorService,
         projectRepository: IProjectRepository,
         nodeRepository: INodeRepository
     ) {
         this.logger = logger;
         this.graphAddNodeService = graphAddNodeService;
+        this.graphNodeAnchorService = graphNodeAnchorService;
         this.projectRepository = projectRepository;
         this.nodeRepository = nodeRepository;
     }
@@ -41,7 +45,23 @@ export class GraphAddNodeUseCase implements IGraphAddNodeUseCase {
             };
         }
 
-        const mapped = this.graphAddNodeService.mapNode(params);
+        const anchors = this.graphNodeAnchorService.normalizeAnchors({ paths: params.paths, commit: params.commit });
+        if (!anchors.success) {
+            return {
+                success: false,
+                error: anchors.error ?? 'Invalid node anchors'
+            };
+        }
+
+        const mapped = this.graphAddNodeService.mapNode({
+            graphId: params.graphId,
+            type: params.type,
+            title: params.title,
+            description: params.description,
+            status: params.status,
+            paths: anchors.paths ?? [],
+            commit: anchors.commit
+        });
         if (!mapped.success || !mapped.node) {
             return {
                 success: false,

@@ -7,9 +7,11 @@ import { NODE_TYPES } from '@domain/constants/node-types.ts';
 import { graphAddNodeController, graphAppendMemoController, graphDeleteNodeController, graphEditMemoController, graphGetNodeController, graphGetNodesController, graphSearchNodesController, graphUpdateNodeController } from '@src/container.ts';
 import { objectId } from './objectIdSchema.ts';
 import {
+    GRAPH_ADD_NODE_COMMIT_FIELD,
     GRAPH_ADD_NODE_DESCRIPTION,
     GRAPH_ADD_NODE_DESCRIPTION_FIELD,
     GRAPH_ADD_NODE_GRAPH_ID_FIELD,
+    GRAPH_ADD_NODE_PATHS_FIELD,
     GRAPH_ADD_NODE_STATUS_FIELD,
     GRAPH_ADD_NODE_TITLE_FIELD,
     GRAPH_ADD_NODE_TYPE_FIELD,
@@ -34,10 +36,13 @@ import {
     GRAPH_SEARCH_NODES_DESCRIPTION,
     GRAPH_SEARCH_NODES_GRAPH_ID_FIELD,
     GRAPH_SEARCH_NODES_LIMIT_FIELD,
+    GRAPH_SEARCH_NODES_PATH_FIELD,
     GRAPH_SEARCH_NODES_TEXT_FIELD,
+    GRAPH_UPDATE_NODE_COMMIT_FIELD,
     GRAPH_UPDATE_NODE_DESCRIPTION,
     GRAPH_UPDATE_NODE_DESCRIPTION_FIELD,
     GRAPH_UPDATE_NODE_ID_FIELD,
+    GRAPH_UPDATE_NODE_PATHS_FIELD,
     GRAPH_UPDATE_NODE_STATUS_FIELD,
     GRAPH_UPDATE_NODE_TITLE_FIELD
 } from './serverInstructions.ts';
@@ -57,12 +62,14 @@ export function registerNodeTools (server: McpServer): void {
                 type: z.enum(NODE_TYPE_VALUES).describe(GRAPH_ADD_NODE_TYPE_FIELD),
                 title: z.string().min(1).describe(GRAPH_ADD_NODE_TITLE_FIELD),
                 description: z.string().min(1).describe(GRAPH_ADD_NODE_DESCRIPTION_FIELD),
-                status: z.enum(NODE_STATUS_VALUES).describe(GRAPH_ADD_NODE_STATUS_FIELD).default('pending')
+                status: z.enum(NODE_STATUS_VALUES).describe(GRAPH_ADD_NODE_STATUS_FIELD).default('pending'),
+                paths: z.array(z.string().min(1)).optional().describe(GRAPH_ADD_NODE_PATHS_FIELD),
+                commit: z.string().min(1).optional().describe(GRAPH_ADD_NODE_COMMIT_FIELD)
             })
         },
-        async ({ graphId, type, title, description, status }) => {
+        async ({ graphId, type, title, description, status, paths, commit }) => {
             const controller = await graphAddNodeController();
-            const response = await controller.handle({ graphId, type, title, description, status });
+            const response = await controller.handle({ graphId, type, title, description, status, paths, commit });
 
             const text = response.success && response.node
                 ? `Node created successfully: ${response.node.id}`
@@ -183,13 +190,14 @@ export function registerNodeTools (server: McpServer): void {
             description: GRAPH_SEARCH_NODES_DESCRIPTION,
             inputSchema: z.object({
                 graphId: objectId.describe(GRAPH_SEARCH_NODES_GRAPH_ID_FIELD),
-                text: z.string().min(1).describe(GRAPH_SEARCH_NODES_TEXT_FIELD),
+                text: z.string().min(1).optional().describe(GRAPH_SEARCH_NODES_TEXT_FIELD),
+                path: z.string().min(1).optional().describe(GRAPH_SEARCH_NODES_PATH_FIELD),
                 limit: z.number().int().positive().optional().describe(GRAPH_SEARCH_NODES_LIMIT_FIELD)
             })
         },
-        async ({ graphId, text, limit }) => {
+        async ({ graphId, text, path, limit }) => {
             const controller = await graphSearchNodesController();
-            const response = await controller.handle({ graphId, text, limit });
+            const response = await controller.handle({ graphId, text, path, limit });
 
             const output = response.success
                 ? `Results:\n${JSON.stringify(response.results ?? [], null, 4)}`
@@ -210,12 +218,14 @@ export function registerNodeTools (server: McpServer): void {
                 id: objectId.describe(GRAPH_UPDATE_NODE_ID_FIELD),
                 title: z.string().min(1).optional().describe(GRAPH_UPDATE_NODE_TITLE_FIELD),
                 description: z.string().min(1).optional().describe(GRAPH_UPDATE_NODE_DESCRIPTION_FIELD),
-                status: z.enum(NODE_STATUS_VALUES).optional().describe(GRAPH_UPDATE_NODE_STATUS_FIELD)
+                status: z.enum(NODE_STATUS_VALUES).optional().describe(GRAPH_UPDATE_NODE_STATUS_FIELD),
+                paths: z.array(z.string().min(1)).optional().describe(GRAPH_UPDATE_NODE_PATHS_FIELD),
+                commit: z.string().min(1).optional().describe(GRAPH_UPDATE_NODE_COMMIT_FIELD)
             })
         },
-        async ({ id, title, description, status }) => {
+        async ({ id, title, description, status, paths, commit }) => {
             const controller = await graphUpdateNodeController();
-            const response = await controller.handle({ id, title, description, status });
+            const response = await controller.handle({ id, title, description, status, paths, commit });
 
             const text = response.success && response.node
                 ? `Node updated successfully: ${response.node.id}`

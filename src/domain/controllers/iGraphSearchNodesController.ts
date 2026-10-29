@@ -25,7 +25,8 @@ export type NodeSearchSummaryResult = {
 
 export type GraphSearchNodesControllerParams = {
     graphId: string;
-    text: string;
+    text?: string;
+    path?: string;
     limit?: number;
 };
 

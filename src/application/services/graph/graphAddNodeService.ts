@@ -25,9 +25,14 @@ export class GraphAddNodeService implements IGraphAddNodeService {
             status: params.status,
             title: params.title,
             description: params.description,
+            paths: params.paths,
             createdAt: now,
             updatedAt: now
         };
+
+        if (params.commit) {
+            node.commit = params.commit;
+        }
 
         return {
             success: true,

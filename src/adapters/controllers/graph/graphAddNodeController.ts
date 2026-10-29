@@ -18,9 +18,9 @@ export class GraphAddNodeController implements IGraphAddNodeController {
     async handle (params: GraphAddNodeControllerParams): Promise<GraphAddNodeControllerResponse> {
         this.logger.info('Executing GraphAddNodeController::handle', params);
 
-        const { graphId, type, title, description, status } = params;
+        const { graphId, type, title, description, status, paths, commit } = params;
 
-        const response = await this.useCase.execute({ graphId, type, title, description, status });
+        const response = await this.useCase.execute({ graphId, type, title, description, status, paths, commit });
 
         const node = response.node ? toNodeSummary(response.node) : undefined;
 

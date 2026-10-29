@@ -68,7 +68,7 @@ A **node** is one unit of knowledge or work. Nodes come in 22 typed flavors, inc
 | **Decisions** | `USER_DECISION`, `AGENT_DECISION`, `CONSTRAINT`, `QUESTION`, `CONFLICT`                 |
 | **Outcomes**  | `ATTEMPT`, `FAILURE`, `SOLUTION`, `REJECTED_APPROACH`                                   |
 
-Each node has a type, title, description and a lifecycle status (`pending` → `in_progress` → `in_validation` → `completed`): work moves through validation before it counts as done. A node's type is immutable after creation; its title, description and status can be updated.
+Each node has a type, title, description and a lifecycle status (`pending` → `in_progress` → `in_validation` → `completed`): work moves through validation before it counts as done. A node can also be anchored to code: `paths` lists the workspace-relative files or directories it is about, and `commit` records the git SHA at which it was verified, so `git log <commit>..HEAD -- <paths>` tells a reader whether that code changed since. A node's type is immutable after creation; its title, description, status, paths and commit can be updated.
 
 ### Edges
 
@@ -94,12 +94,12 @@ The server exposes **15 tools** across three toolsets:
 | `graph-get-projects`   | List all projects in the graph store                                                                                                                                                                  |
 | `graph-get-project`    | Fetch a single project by id (24-hex ObjectId) or exact name                                                                                                                                          |
 | `graph-delete-project` | Delete a project by id                                                                                                                                                                                |
-| `graph-add-node`       | Add a typed node to an existing project graph                                                                                                                                                         |
+| `graph-add-node`       | Add a typed node to an existing project graph, optionally anchored to `paths` and a `commit`                                                                                                                                                         |
 | `graph-get-nodes`      | List a project's nodes (descriptions only, no memo text; each outgoing edge carries the target node title; filter by type/status, cap with `limit`, newest first)                                     |
 | `graph-get-node`       | Fetch a node by id, including its outgoing edges (each carrying the target node title) and its memos, optionally filtered by memo type (e.g. ["resolution", "directive"])                             |
-| `graph-update-node`    | Partially update a node's title, description or status                                                                                                                                                |
+| `graph-update-node`    | Partially update a node's title, description, status, paths or commit                                                                                                                                                |
 | `graph-delete-node`    | Delete a node (refused while edges are still attached)                                                                                                                                                |
-| `graph-search-nodes`   | Exact token search (not semantic, diacritics-insensitive, regular plurals folded) across titles, descriptions, edge memories and the searchable memos (`resolution`, `directive`); each hit adds its best matching `bestMemo` |
+| `graph-search-nodes`   | Exact token search (not semantic, diacritics-insensitive, regular plurals folded) across titles, descriptions, edge memories and the searchable memos (`resolution`, `directive`), optionally narrowed by `path` (or by `path` alone); each hit adds its best matching `bestMemo` |
 | `graph-append-memo`    | Append an attributed, typed discussion entry to a node (`note`, `resolution` or `directive`; `type` is required)                                                                                      |
 | `graph-add-edge`       | Add a typed, first-class edge between two nodes, with a memory in its description                                                                                                                     |
 | `graph-update-edge`    | Partially update an edge's type or description                                                                                                                                                        |

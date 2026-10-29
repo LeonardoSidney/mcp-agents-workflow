@@ -23,6 +23,7 @@ import { GraphAddNodeService } from '@application/services/graph/graphAddNodeSer
 import { GraphAppendMemoService } from '@application/services/graph/graphAppendMemoService.ts';
 import { GraphAddService } from '@application/services/graph/graphAddService.ts';
 import { GraphEdgeService } from '@application/services/graph/graphEdgeService.ts';
+import { GraphNodeAnchorService } from '@application/services/graph/graphNodeAnchorService.ts';
 import { GraphSearchNodesService } from '@application/services/graph/graphSearchNodesService.ts';
 import { GraphUpdateNodeService } from '@application/services/graph/graphUpdateNodeService.ts';
 import { GraphAddEdgeUseCase } from '@application/use-cases/graph/graphAddEdgeUseCase.ts';
@@ -91,7 +92,8 @@ export async function graphAddNodeController (): Promise<GraphAddNodeController>
     const projectRepository = new ProjectRepository(databaseGateway);
     const nodeRepository = new NodeRepository(databaseGateway);
     const graphAddNodeService = new GraphAddNodeService();
-    const graphAddNodeUseCase = new GraphAddNodeUseCase(logger, graphAddNodeService, projectRepository, nodeRepository);
+    const graphNodeAnchorService = new GraphNodeAnchorService();
+    const graphAddNodeUseCase = new GraphAddNodeUseCase(logger, graphAddNodeService, graphNodeAnchorService, projectRepository, nodeRepository);
     return new GraphAddNodeController(logger, graphAddNodeUseCase);
 }
 
@@ -99,7 +101,8 @@ export async function graphUpdateNodeController (): Promise<GraphUpdateNodeContr
     const databaseGateway = await database();
     const nodeRepository = new NodeRepository(databaseGateway);
     const graphUpdateNodeService = new GraphUpdateNodeService();
-    const graphUpdateNodeUseCase = new GraphUpdateNodeUseCase(logger, graphUpdateNodeService, nodeRepository);
+    const graphNodeAnchorService = new GraphNodeAnchorService();
+    const graphUpdateNodeUseCase = new GraphUpdateNodeUseCase(logger, graphUpdateNodeService, graphNodeAnchorService, nodeRepository);
     return new GraphUpdateNodeController(logger, graphUpdateNodeUseCase);
 }
 
@@ -147,7 +150,8 @@ export async function graphSearchNodesController (): Promise<GraphSearchNodesCon
     const projectRepository = new ProjectRepository(databaseGateway);
     const nodeRepository = new NodeRepository(databaseGateway);
     const graphSearchNodesService = new GraphSearchNodesService();
-    const graphSearchNodesUseCase = new GraphSearchNodesUseCase(logger, graphSearchNodesService, projectRepository, nodeRepository);
+    const graphNodeAnchorService = new GraphNodeAnchorService();
+    const graphSearchNodesUseCase = new GraphSearchNodesUseCase(logger, graphSearchNodesService, graphNodeAnchorService, projectRepository, nodeRepository);
     return new GraphSearchNodesController(logger, graphSearchNodesUseCase);
 }
 

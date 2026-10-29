@@ -12,6 +12,8 @@ export type GraphAddNodeUseCaseParams = {
     title: string;
     description: string;
     status: NodeStatus;
+    paths?: string[];
+    commit?: string;
 };
 
 export type GraphAddNodeUseCaseResponse = {

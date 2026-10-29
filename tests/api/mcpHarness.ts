@@ -227,6 +227,7 @@ export function mcpTestHarness () {
     return {
         callTool,
         textOf,
+        idOf,
         instructions,
         listTools,
         addProject,

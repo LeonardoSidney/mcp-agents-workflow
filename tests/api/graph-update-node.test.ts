@@ -95,4 +95,53 @@ describe('MCP server - graph-update-node', () => {
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('At least one field must be provided');
     });
+
+    test('sets the paths and commit of an existing node', async () => {
+        const graph = await addProject('Anchor Update Project', 'Project used to anchor an existing node');
+        const node = await addNode(graph.id, 'SOLUTION', 'Lean protocol', 'Shorter server instructions');
+
+        const result = await callTool('graph-update-node', { id: node.id, paths: ['src/mcp/serverInstructions.ts'], commit: 'abc1234' });
+        expect(result.isError).toBeFalsy();
+
+        const fetched = await fetchNode(node.id);
+        const updated = JSON.parse(textOf(fetched)) as NodeWithMemos;
+        expect(updated.paths).toEqual(['src/mcp/serverInstructions.ts']);
+        expect(updated.commit).toEqual('abc1234');
+    });
+
+    test('keeps the paths and commit when an update omits them', async () => {
+        const graph = await addProject('Anchor Keep Project', 'Project used to keep anchors across updates');
+        const node = await addNode(graph.id, 'SOLUTION', 'Lean protocol', 'Shorter server instructions');
+        await callTool('graph-update-node', { id: node.id, paths: ['src/mcp'], commit: 'abc1234' });
+
+        const result = await callTool('graph-update-node', { id: node.id, status: 'completed' });
+        expect(result.isError).toBeFalsy();
+
+        const fetched = await fetchNode(node.id);
+        const updated = JSON.parse(textOf(fetched)) as NodeWithMemos;
+        expect(updated).toMatchObject({ status: 'completed', paths: ['src/mcp'], commit: 'abc1234' });
+    });
+
+    test('clears the paths when an update passes an empty list', async () => {
+        const graph = await addProject('Anchor Clear Project', 'Project used to clear anchors');
+        const node = await addNode(graph.id, 'SOLUTION', 'Lean protocol', 'Shorter server instructions');
+        await callTool('graph-update-node', { id: node.id, paths: ['src/mcp'] });
+
+        const result = await callTool('graph-update-node', { id: node.id, paths: [] });
+        expect(result.isError).toBeFalsy();
+
+        const fetched = await fetchNode(node.id);
+        const updated = JSON.parse(textOf(fetched)) as NodeWithMemos;
+        expect(updated.paths).toBeUndefined();
+    });
+
+    test('refuses a path that leaves the workspace root', async () => {
+        const graph = await addProject('Anchor Escape Project', 'Project used to reject escaping paths');
+        const node = await addNode(graph.id, 'TASK', 'Escaping task', 'Task anchored outside the workspace');
+
+        const result = await callTool('graph-update-node', { id: node.id, paths: ['../other-repo/src'] });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('must not leave the workspace root');
+    });
 });

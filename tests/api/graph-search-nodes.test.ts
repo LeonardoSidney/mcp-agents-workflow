@@ -1,7 +1,7 @@
 import { mcpTestHarness } from './mcpHarness.ts';
 
 type SearchHit = {
-    node: { id: string; edges: { targetId: string; targetTitle?: string; }[]; };
+    node: { id: string; paths?: string[]; edges: { targetId: string; targetTitle?: string; }[]; };
     titleScore: number;
     descriptionScore: number;
     memoryScore: number;
@@ -9,7 +9,16 @@ type SearchHit = {
     score: number;
 };
 
-const { addEdge, addMemo, addNode, addProject, callTool, textOf } = mcpTestHarness();
+const { addEdge, addMemo, addNode, addProject, callTool, idOf, textOf } = mcpTestHarness();
+
+async function addAnchoredNode (graphId: string, title: string, paths: string[]): Promise<{ id: string; }> {
+    const result = await callTool('graph-add-node', { graphId, type: 'DISCOVERY', title, description: `${title} details`, paths });
+    if (result.isError) {
+        throw new Error(`graph-add-node failed: ${textOf(result)}`);
+    }
+
+    return { id: idOf(result) };
+}
 
 describe('MCP server - graph-search-nodes', () => {
     test('ranks search results by similarity, penalizing reversed and repeated tokens', async () => {
@@ -270,5 +279,61 @@ describe('MCP server - graph-search-nodes', () => {
         expect(results).toHaveLength(1);
         expect(results[0]?.bestMemo?.id).toEqual(resolution.id);
         expect(results[0]?.bestMemo?.type).toEqual('resolution');
+    });
+
+    test('finds the nodes anchored inside a directory when searching by path alone', async () => {
+        const graph = await addProject('Path Search Project', 'Project used to search nodes by path');
+        const inside = await addAnchoredNode(graph.id, 'Tool schema pitfall', ['src/mcp/nodeTools.ts']);
+        await addAnchoredNode(graph.id, 'Gateway pitfall', ['src/adapters/gateways/mongoDbGateway.ts']);
+        await addNode(graph.id, 'TASK', 'Unanchored task', 'Task without paths');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, path: 'src/mcp' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([inside.id]);
+        expect(results[0]?.node.paths).toEqual(['src/mcp/nodeTools.ts']);
+    });
+
+    test('finds a directory node when searching by a file inside it', async () => {
+        const graph = await addProject('Directory Node Project', 'Project used to match directory anchors');
+        const directory = await addAnchoredNode(graph.id, 'Domain layer rule', ['src/domain']);
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, path: './src/domain/entities/node.ts' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([directory.id]);
+    });
+
+    test('combines path and text, returning only nodes matching both', async () => {
+        const graph = await addProject('Path Text Project', 'Project used to combine path and text');
+        const both = await addAnchoredNode(graph.id, 'Search ranking pitfall', ['src/application']);
+        await addAnchoredNode(graph.id, 'Gateway ranking pitfall', ['src/adapters']);
+        await addAnchoredNode(graph.id, 'Repository hydration', ['src/application']);
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'ranking', path: 'src/application' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results.map(hit => hit.node.id)).toEqual([both.id]);
+    });
+
+    test('refuses a search without text and without path', async () => {
+        const graph = await addProject('Empty Search Project', 'Project used to reject empty searches');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('A non-empty search text or path is required');
+    });
+
+    test('refuses an absolute search path', async () => {
+        const graph = await addProject('Absolute Search Project', 'Project used to reject absolute search paths');
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, path: '/src/mcp' });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('relative to the workspace root');
     });
 });

@@ -90,6 +90,8 @@ export type NodeDocument = {
     status: string;
     title: string;
     description: string;
+    paths?: string[];
+    commit?: string;
     created_at: Date;
     updated_at: Date;
 };
