@@ -1,6 +1,7 @@
-import type { MemoMatchSummary, NodeSearchSummaryResult } from '@domain/controllers/iGraphSearchNodesController.ts';
+import type { EdgeMatchSummary, MemoMatchSummary, NodeSearchSummaryResult } from '@domain/controllers/iGraphSearchNodesController.ts';
+import type { EdgeMatch } from '@domain/entities/edge.ts';
 import type { MemoMatch } from '@domain/entities/memo.ts';
-import { toNodeSummaryWithEdges } from '@domain/entities/node.ts';
+import { toNodeBrief } from '@domain/entities/node.ts';
 import { BEST_MEMO_MIN_SCORE } from '@domain/presentation/iGraphSearchNodesPresentation.ts';
 import type { GraphSearchNodesPresentationParams, IGraphSearchNodesPresentation } from '@domain/presentation/iGraphSearchNodesPresentation.ts';
 import type { NodeSearchResult } from '@domain/services/iGraphSearchNodesService.ts';
@@ -13,19 +14,27 @@ export class GraphSearchNodesPresentation implements IGraphSearchNodesPresentati
     }
 
     private summaryResult (result: NodeSearchResult, isTextSearch: boolean): NodeSearchSummaryResult {
-        const node = toNodeSummaryWithEdges(result.node);
+        const node = toNodeBrief(result.node);
         if (!isTextSearch) {
             return { node };
         }
 
-        return {
+        const summary: NodeSearchSummaryResult = {
             node,
-            titleScore: this.round(result.titleScore),
-            descriptionScore: this.round(result.descriptionScore),
-            memoryScore: this.round(result.memoryScore),
-            bestMemo: this.bestMemoSummary(result.bestMemo),
             score: this.round(result.score)
         };
+
+        const bestMemo = this.bestMemoSummary(result.bestMemo);
+        if (bestMemo) {
+            summary.bestMemo = bestMemo;
+        }
+
+        const bestEdge = this.bestEdgeSummary(result.bestEdge);
+        if (bestEdge) {
+            summary.bestEdge = bestEdge;
+        }
+
+        return summary;
     }
 
     private round (value: number): number {
@@ -42,11 +51,27 @@ export class GraphSearchNodesPresentation implements IGraphSearchNodesPresentati
         }
 
         return {
-            id: bestMemo.id,
             author: bestMemo.author,
             type: bestMemo.type,
-            text: bestMemo.text,
-            score: this.round(bestMemo.score)
+            text: bestMemo.text
         };
+    }
+
+    private bestEdgeSummary (bestEdge: EdgeMatch | null): EdgeMatchSummary | undefined {
+        if (!bestEdge) {
+            return undefined;
+        }
+
+        const summary: EdgeMatchSummary = {
+            type: bestEdge.type,
+            targetId: bestEdge.targetId,
+            description: bestEdge.description
+        };
+
+        if (bestEdge.targetTitle !== undefined) {
+            summary.targetTitle = bestEdge.targetTitle;
+        }
+
+        return summary;
     }
 }

@@ -147,4 +147,21 @@ describe('MCP server - graph-get-nodes', () => {
         expect(listedTask?.edges).toHaveLength(1);
         expect(listedTask?.edges).toMatchObject([{ targetId: goal.id, targetTitle: 'Listed goal' }]);
     });
+
+    test('keeps graphId and edge ids and descriptions out of the node list', async () => {
+        const graph = await addProject('Lean List Project', 'Project used to check the lean list shape');
+        const goal = await addNode(graph.id, 'GOAL', 'Listed goal', 'Goal linked from the listed task');
+        const task = await addNode(graph.id, 'TASK', 'Listed task', 'Task linked to the listed goal');
+        await addEdge(graph.id, task.id, goal.id, 'DEPENDS_ON', 'The task needs the goal to be clear');
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id });
+        expect(result.isError).toBeFalsy();
+
+        const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as Record<string, unknown>[];
+        const listedTask = nodes.find(node => node['id'] === task.id);
+
+        expect(Object.keys(listedTask ?? {})).not.toContain('graphId');
+        expect(listedTask?.['edges']).toEqual([{ type: 'DEPENDS_ON', targetId: goal.id, targetTitle: 'Listed goal' }]);
+        expect(textOf(result)).not.toContain('The task needs the goal to be clear');
+    });
 });

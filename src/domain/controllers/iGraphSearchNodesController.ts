@@ -1,26 +1,30 @@
+import type { EdgeType } from '@domain/constants/edge-types.ts';
 import type { MemoAuthor } from '@domain/constants/memo-authors.ts';
 import type { MemoType } from '@domain/constants/memo-types.ts';
-import type { NodeSummaryWithEdges } from '@domain/entities/node.ts';
+import type { NodeBrief } from '@domain/entities/node.ts';
 
 export interface IGraphSearchNodesController {
     handle (params: GraphSearchNodesControllerParams): Promise<GraphSearchNodesControllerResponse>;
 }
 
 export type MemoMatchSummary = {
-    id: string;
     author: MemoAuthor;
     type: MemoType;
     text: string;
-    score: number;
+};
+
+export type EdgeMatchSummary = {
+    type: EdgeType;
+    targetId: string;
+    targetTitle?: string;
+    description: string;
 };
 
 export type NodeSearchSummaryResult = {
-    node: NodeSummaryWithEdges;
-    titleScore?: number;
-    descriptionScore?: number;
-    memoryScore?: number;
-    bestMemo?: MemoMatchSummary;
+    node: NodeBrief;
     score?: number;
+    bestMemo?: MemoMatchSummary;
+    bestEdge?: EdgeMatchSummary;
 };
 
 export type GraphSearchNodesControllerParams = {

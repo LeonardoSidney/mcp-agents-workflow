@@ -262,6 +262,74 @@ describe('GraphSearchNodesService', () => {
         expect(results[0]).toMatchObject({ titleScore: 0, descriptionScore: 0, memoryScore: 1 });
     });
 
+    test('surfaces the best-matching edge with its target and description', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Unrelated task',
+            description: '',
+            edges: [
+                { id: 'e1', type: 'RELATED_TO', targetId: 't1', description: 'database cleanup' },
+                { id: 'e2', type: 'CONSTRAINED_BY', targetId: 't2', targetTitle: 'Migration window', description: 'database migration' }
+            ]
+        });
+
+        const response = service.scoreNodes({ text: 'database migration', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]?.bestEdge).toEqual({
+            type: 'CONSTRAINED_BY',
+            targetId: 't2',
+            targetTitle: 'Migration window',
+            description: 'database migration',
+            score: 1
+        });
+    });
+
+    test('returns no best edge when the title, description and memos already cover the query', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Database migration',
+            description: '',
+            edges: [{ id: 'e1', type: 'CONSTRAINED_BY', targetId: 't1', description: 'database migration' }]
+        });
+
+        const response = service.scoreNodes({ text: 'database migration', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]?.bestEdge).toBeNull();
+    });
+
+    test('picks as best edge only an edge holding a token missing from the node', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Database task',
+            description: '',
+            edges: [
+                { id: 'e1', type: 'RELATED_TO', targetId: 't1', description: 'database task database task' },
+                { id: 'e2', type: 'CONSTRAINED_BY', targetId: 't2', description: 'migration window' }
+            ]
+        });
+
+        const response = service.scoreNodes({ text: 'database migration', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]?.bestEdge?.targetId).toEqual('t2');
+    });
+
+    test('returns no best edge when no edge description matches', () => {
+        const node = buildNode({
+            id: 'n1',
+            title: 'Invoice report',
+            description: '',
+            edges: [{ id: 'e1', type: 'RELATED_TO', targetId: 't1', description: 'unrelated words' }]
+        });
+
+        const response = service.scoreNodes({ text: 'invoice report', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]?.bestEdge).toBeNull();
+    });
+
     test('keeps memoryScore at zero for nodes without edges or memos', () => {
         const node = buildNode({ id: 'n1', title: 'Invoice report', description: '' });
 

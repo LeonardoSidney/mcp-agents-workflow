@@ -17,6 +17,20 @@ export type EdgeReference = {
     description?: string;
 };
 
+export type EdgeBrief = {
+    type: EdgeType;
+    targetId: string;
+    targetTitle?: string;
+};
+
+export type EdgeMatch = {
+    type: EdgeType;
+    targetId: string;
+    targetTitle?: string;
+    description: string;
+    score: number;
+};
+
 export function toEdgeReference (edge: Edge): EdgeReference {
     return {
         id: edge.id,
@@ -24,4 +38,17 @@ export function toEdgeReference (edge: Edge): EdgeReference {
         targetId: edge.targetId,
         description: edge.description
     };
+}
+
+export function toEdgeBrief (reference: EdgeReference): EdgeBrief {
+    const brief: EdgeBrief = {
+        type: reference.type,
+        targetId: reference.targetId
+    };
+
+    if (reference.targetTitle !== undefined) {
+        brief.targetTitle = reference.targetTitle;
+    }
+
+    return brief;
 }

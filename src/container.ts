@@ -15,6 +15,7 @@ import { GraphUpdateEdgeController } from '@adapters/controllers/graph/graphUpda
 import { GraphUpdateNodeController } from '@adapters/controllers/graph/graphUpdateNodeController.ts';
 import { ConsoleLogger } from '@adapters/logger/consoleLogger.ts';
 import { NoopLogger } from '@adapters/logger/noopLogger.ts';
+import { GraphGetNodesPresentation } from '@adapters/presentation/graph/graphGetNodesPresentation.ts';
 import { GraphSearchNodesPresentation } from '@adapters/presentation/graph/graphSearchNodesPresentation.ts';
 import { EdgeRepository } from '@application/repository/edgeRepository.ts';
 import { MemoRepository } from '@application/repository/memoRepository.ts';
@@ -112,7 +113,8 @@ export async function graphGetNodesController (): Promise<GraphGetNodesControlle
     const projectRepository = new ProjectRepository(databaseGateway);
     const nodeRepository = new NodeRepository(databaseGateway);
     const graphGetNodesUseCase = new GraphGetNodesUseCase(logger, projectRepository, nodeRepository);
-    return new GraphGetNodesController(logger, graphGetNodesUseCase);
+    const graphGetNodesPresentation = new GraphGetNodesPresentation();
+    return new GraphGetNodesController(logger, graphGetNodesUseCase, graphGetNodesPresentation);
 }
 
 export async function graphGetNodeController (): Promise<GraphGetNodeController> {

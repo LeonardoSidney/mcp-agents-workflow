@@ -123,6 +123,7 @@ export class GraphSearchNodesUseCase implements IGraphSearchNodesUseCase {
                 descriptionScore: 0,
                 memoryScore: 0,
                 bestMemo: null,
+                bestEdge: null,
                 score: 0
             }))
         };

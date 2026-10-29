@@ -1,6 +1,7 @@
 import type { NodeStatus } from '@domain/constants/node-status.ts';
 import type { NodeType } from '@domain/constants/node-types.ts';
-import type { EdgeReference } from '@domain/entities/edge.ts';
+import type { EdgeBrief, EdgeReference } from '@domain/entities/edge.ts';
+import { toEdgeBrief } from '@domain/entities/edge.ts';
 import type { Memo, MemoSummary } from '@domain/entities/memo.ts';
 import { toMemoSummary } from '@domain/entities/memo.ts';
 
@@ -57,16 +58,15 @@ export type NodeSummary = {
     commit?: string;
 };
 
-export type NodeSummaryWithEdges = {
+export type NodeBrief = {
     id: string;
-    graphId: string;
     type: NodeType;
     status: NodeStatus;
     title: string;
     description: string;
     paths?: string[];
     commit?: string;
-    edges: EdgeReference[];
+    edges: EdgeBrief[];
 };
 
 export type NodeSummaryWithMemos = {
@@ -103,11 +103,25 @@ export function toNodeSummary (node: Node): NodeSummary {
     return summary;
 }
 
-export function toNodeSummaryWithEdges (node: NodeWithEdges): NodeSummaryWithEdges {
-    return {
-        ...toNodeSummary(node),
-        edges: node.edges
+export function toNodeBrief (node: NodeWithEdges): NodeBrief {
+    const brief: NodeBrief = {
+        id: node.id,
+        type: node.type,
+        status: node.status,
+        title: node.title,
+        description: node.description,
+        edges: node.edges.map(toEdgeBrief)
     };
+
+    if (node.paths.length > 0) {
+        brief.paths = node.paths;
+    }
+
+    if (node.commit) {
+        brief.commit = node.commit;
+    }
+
+    return brief;
 }
 
 export function toNodeSummaryWithMemos (node: NodeWithMemos): NodeSummaryWithMemos {
