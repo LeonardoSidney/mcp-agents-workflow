@@ -295,6 +295,31 @@ describe('MCP server - graph-search-nodes', () => {
         expect(results[0]?.node.paths).toEqual(['src/mcp/nodeTools.ts']);
     });
 
+    test('omits the scores from the hits of a path-only search', async () => {
+        const graph = await addProject('Path Scores Project', 'Project used to verify path-only hits carry no scores');
+        await addAnchoredNode(graph.id, 'Tool schema pitfall', ['src/mcp/nodeTools.ts']);
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, path: 'src/mcp' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as Record<string, unknown>[];
+        expect(results).toHaveLength(1);
+        expect(Object.keys(results[0] ?? {})).toEqual(['node']);
+    });
+
+    test('keeps the scores on the hits of a search combining path and text', async () => {
+        const graph = await addProject('Path Text Scores Project', 'Project used to verify combined hits keep scores');
+        await addAnchoredNode(graph.id, 'Tool schema pitfall', ['src/mcp/nodeTools.ts']);
+
+        const result = await callTool('graph-search-nodes', { graphId: graph.id, text: 'schema', path: 'src/mcp' });
+        expect(result.isError).toBeFalsy();
+
+        const results = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as SearchHit[];
+        expect(results).toHaveLength(1);
+        expect(results[0]?.titleScore).toBeGreaterThan(0);
+        expect(results[0]?.score).toBeGreaterThan(0);
+    });
+
     test('finds a directory node when searching by a file inside it', async () => {
         const graph = await addProject('Directory Node Project', 'Project used to match directory anchors');
         const directory = await addAnchoredNode(graph.id, 'Domain layer rule', ['src/domain']);

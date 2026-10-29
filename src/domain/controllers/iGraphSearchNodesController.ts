@@ -16,11 +16,11 @@ export type MemoMatchSummary = {
 
 export type NodeSearchSummaryResult = {
     node: NodeSummaryWithEdges;
-    titleScore: number;
-    descriptionScore: number;
-    memoryScore: number;
+    titleScore?: number;
+    descriptionScore?: number;
+    memoryScore?: number;
     bestMemo?: MemoMatchSummary;
-    score: number;
+    score?: number;
 };
 
 export type GraphSearchNodesControllerParams = {

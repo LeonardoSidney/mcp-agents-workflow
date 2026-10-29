@@ -15,6 +15,7 @@ import { GraphUpdateEdgeController } from '@adapters/controllers/graph/graphUpda
 import { GraphUpdateNodeController } from '@adapters/controllers/graph/graphUpdateNodeController.ts';
 import { ConsoleLogger } from '@adapters/logger/consoleLogger.ts';
 import { NoopLogger } from '@adapters/logger/noopLogger.ts';
+import { GraphSearchNodesPresentation } from '@adapters/presentation/graph/graphSearchNodesPresentation.ts';
 import { EdgeRepository } from '@application/repository/edgeRepository.ts';
 import { MemoRepository } from '@application/repository/memoRepository.ts';
 import { NodeRepository } from '@application/repository/nodeRepository.ts';
@@ -152,7 +153,8 @@ export async function graphSearchNodesController (): Promise<GraphSearchNodesCon
     const graphSearchNodesService = new GraphSearchNodesService();
     const graphNodeAnchorService = new GraphNodeAnchorService();
     const graphSearchNodesUseCase = new GraphSearchNodesUseCase(logger, graphSearchNodesService, graphNodeAnchorService, projectRepository, nodeRepository);
-    return new GraphSearchNodesController(logger, graphSearchNodesUseCase);
+    const graphSearchNodesPresentation = new GraphSearchNodesPresentation();
+    return new GraphSearchNodesController(logger, graphSearchNodesUseCase, graphSearchNodesPresentation);
 }
 
 export async function graphAddEdgeController (): Promise<GraphAddEdgeController> {

@@ -1,21 +1,21 @@
-import type { GraphSearchNodesControllerParams, GraphSearchNodesControllerResponse, IGraphSearchNodesController, MemoMatchSummary } from '@domain/controllers/iGraphSearchNodesController.ts';
-import type { MemoMatch } from '@domain/entities/memo.ts';
-import { toNodeSummaryWithEdges } from '@domain/entities/node.ts';
+import type { GraphSearchNodesControllerParams, GraphSearchNodesControllerResponse, IGraphSearchNodesController } from '@domain/controllers/iGraphSearchNodesController.ts';
 import type { ILogger } from '@domain/logger.ts';
+import type { IGraphSearchNodesPresentation } from '@domain/presentation/iGraphSearchNodesPresentation.ts';
 import type { IGraphSearchNodesUseCase } from '@domain/use-cases/iGraphSearchNodesUseCase.ts';
-
-const BEST_MEMO_MIN_SCORE = 0.1;
 
 export class GraphSearchNodesController implements IGraphSearchNodesController {
     private readonly logger: ILogger;
     private readonly useCase: IGraphSearchNodesUseCase;
+    private readonly presentation: IGraphSearchNodesPresentation;
 
     constructor (
         logger: ILogger,
-        useCase: IGraphSearchNodesUseCase
+        useCase: IGraphSearchNodesUseCase,
+        presentation: IGraphSearchNodesPresentation
     ) {
         this.logger = logger;
         this.useCase = useCase;
+        this.presentation = presentation;
     }
 
     async handle (params: GraphSearchNodesControllerParams): Promise<GraphSearchNodesControllerResponse> {
@@ -36,14 +36,7 @@ export class GraphSearchNodesController implements IGraphSearchNodesController {
             return result;
         }
 
-        const results = response.results.map(result => ({
-            node: toNodeSummaryWithEdges(result.node),
-            titleScore: this.round(result.titleScore),
-            descriptionScore: this.round(result.descriptionScore),
-            memoryScore: this.round(result.memoryScore),
-            bestMemo: this.bestMemoSummary(result.bestMemo),
-            score: this.round(result.score)
-        }));
+        const results = this.presentation.presentResults({ results: response.results, text });
 
         const result = {
             success: true,
@@ -53,27 +46,5 @@ export class GraphSearchNodesController implements IGraphSearchNodesController {
         this.logger.info('GraphSearchNodesController::handle result', result);
 
         return result;
-    }
-
-    private round (value: number): number {
-        return Number(value.toFixed(2));
-    }
-
-    private bestMemoSummary (bestMemo: MemoMatch | null): MemoMatchSummary | undefined {
-        if (!bestMemo) {
-            return undefined;
-        }
-
-        if (bestMemo.score < BEST_MEMO_MIN_SCORE) {
-            return undefined;
-        }
-
-        return {
-            id: bestMemo.id,
-            author: bestMemo.author,
-            type: bestMemo.type,
-            text: bestMemo.text,
-            score: this.round(bestMemo.score)
-        };
     }
 }
