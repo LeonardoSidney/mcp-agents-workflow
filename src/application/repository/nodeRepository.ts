@@ -1,5 +1,5 @@
 import type { INodeRepository, AddNodeRepositoryParams, DeleteNodeRepositoryParams, GetNodeRepositoryParams, GetNodesRepositoryParams, ListAttachedEdgeIdsRepositoryParams, RecordGetRepositoryParams, RecordSearchHitsRepositoryParams, UpdateNodeRepositoryParams } from '@domain/repository/iNodeRepository.ts';
-import type { NodeWithEdges, NodeWithMemos } from '@domain/entities/node.ts';
+import type { Node, NodeWithEdges, NodeWithMemos } from '@domain/entities/node.ts';
 import type { EdgeReference } from '@domain/entities/edge.ts';
 import { toEdgeReference } from '@domain/entities/edge.ts';
 import type { Memo } from '@domain/entities/memo.ts';
@@ -47,6 +47,12 @@ export class NodeRepository implements INodeRepository {
 
             return { ...node, edges };
         }));
+    }
+
+    async getNodesWithoutEdges (params: GetNodesRepositoryParams): Promise<Node[]> {
+        const documents = await this.listNodeDocuments(params);
+
+        return documents.map(document => NodeDTO.to_domain(document));
     }
 
     async getNodesWithMemos (params: GetNodesRepositoryParams): Promise<NodeWithMemos[]> {

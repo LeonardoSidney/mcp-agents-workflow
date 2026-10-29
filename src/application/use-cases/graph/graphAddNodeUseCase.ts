@@ -1,6 +1,7 @@
 import type { ILogger } from '@domain/logger.ts';
 import type { IGraphAddNodeService } from '@domain/services/iGraphAddNodeService.ts';
 import type { IGraphNodeAnchorService } from '@domain/services/iGraphNodeAnchorService.ts';
+import type { IGraphSimilarNodesService } from '@domain/services/iGraphSimilarNodesService.ts';
 import type { IProjectRepository } from '@domain/repository/iProjectRepository.ts';
 import type { INodeRepository } from '@domain/repository/iNodeRepository.ts';
 import type { GraphAddNodeUseCaseParams, GraphAddNodeUseCaseResponse, IGraphAddNodeUseCase } from '@domain/use-cases/iGraphAddNodeUseCase.ts';
@@ -9,6 +10,7 @@ export class GraphAddNodeUseCase implements IGraphAddNodeUseCase {
     private readonly logger: ILogger;
     private readonly graphAddNodeService: IGraphAddNodeService;
     private readonly graphNodeAnchorService: IGraphNodeAnchorService;
+    private readonly graphSimilarNodesService: IGraphSimilarNodesService;
     private readonly projectRepository: IProjectRepository;
     private readonly nodeRepository: INodeRepository;
 
@@ -16,12 +18,14 @@ export class GraphAddNodeUseCase implements IGraphAddNodeUseCase {
         logger: ILogger,
         graphAddNodeService: IGraphAddNodeService,
         graphNodeAnchorService: IGraphNodeAnchorService,
+        graphSimilarNodesService: IGraphSimilarNodesService,
         projectRepository: IProjectRepository,
         nodeRepository: INodeRepository
     ) {
         this.logger = logger;
         this.graphAddNodeService = graphAddNodeService;
         this.graphNodeAnchorService = graphNodeAnchorService;
+        this.graphSimilarNodesService = graphSimilarNodesService;
         this.projectRepository = projectRepository;
         this.nodeRepository = nodeRepository;
     }
@@ -69,13 +73,18 @@ export class GraphAddNodeUseCase implements IGraphAddNodeUseCase {
             };
         }
 
+        const sameTypeNodes = await this.nodeRepository.getNodesWithoutEdges({ graphId: params.graphId, types: [mapped.node.type] });
+
         await this.nodeRepository.addNode({ node: mapped.node });
 
         this.logger.info('Node added', mapped.node);
 
+        const similarNodes = this.graphSimilarNodesService.findSimilar({ node: mapped.node, candidates: sameTypeNodes });
+
         return {
             success: true,
-            node: mapped.node
+            node: mapped.node,
+            similarNodes
         };
     }
 

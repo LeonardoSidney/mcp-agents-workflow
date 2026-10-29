@@ -2,11 +2,12 @@ import { SEARCHABLE_MEMO_TYPES } from '@domain/constants/memo-types.ts';
 import type { EdgeMatch, EdgeReference } from '@domain/entities/edge.ts';
 import type { Memo, MemoMatch } from '@domain/entities/memo.ts';
 import type { NodeWithMemos } from '@domain/entities/node.ts';
+import { toSearchTokens } from '@application/utils/searchTokens.ts';
 import type { GraphSearchNodesServiceParams, GraphSearchNodesServiceResponse, IGraphSearchNodesService, NodeSearchResult } from '@domain/services/iGraphSearchNodesService.ts';
 
 export class GraphSearchNodesService implements IGraphSearchNodesService {
     scoreNodes (params: GraphSearchNodesServiceParams): GraphSearchNodesServiceResponse {
-        const queryTokens = this.uniqueTokens(this.toTokens(params.text));
+        const queryTokens = this.uniqueTokens(toSearchTokens(params.text));
         if (queryTokens.length === 0) {
             return {
                 success: false,
@@ -56,16 +57,16 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
     private nodeSurfaceTokens (node: NodeWithMemos, memos: Memo[]): Set<string> {
         const surfaceTokens = new Set<string>();
 
-        for (const token of this.toTokens(node.title)) {
+        for (const token of toSearchTokens(node.title)) {
             surfaceTokens.add(token);
         }
 
-        for (const token of this.toTokens(node.description)) {
+        for (const token of toSearchTokens(node.description)) {
             surfaceTokens.add(token);
         }
 
         for (const memo of memos) {
-            for (const token of this.toTokens(memo.text)) {
+            for (const token of toSearchTokens(memo.text)) {
                 surfaceTokens.add(token);
             }
         }
@@ -85,7 +86,7 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
                 continue;
             }
 
-            for (const token of this.toTokens(edge.description)) {
+            for (const token of toSearchTokens(edge.description)) {
                 edgeTokens.add(token);
             }
         }
@@ -119,7 +120,7 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
                 continue;
             }
 
-            const edgeTokens = this.toTokens(edge.description);
+            const edgeTokens = toSearchTokens(edge.description);
             if (!edgeOnlyTokens.some(token => edgeTokens.includes(token))) {
                 continue;
             }
@@ -173,48 +174,12 @@ export class GraphSearchNodesService implements IGraphSearchNodesService {
         return memos.filter(memo => SEARCHABLE_MEMO_TYPES.includes(memo.type));
     }
 
-    private toTokens (text: string): string[] {
-        const normalized = text
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '');
-
-        return normalized
-            .split(/[^a-z0-9]+/)
-            .filter(token => token.length > 0)
-            .map(token => this.singularize(token));
-    }
-
-    private singularize (token: string): string {
-        if (token.length <= 3) {
-            return token;
-        }
-
-        if (token.endsWith('ies')) {
-            return `${token.slice(0, -3)}y`;
-        }
-
-        if (token.endsWith('sses')) {
-            return token.slice(0, -2);
-        }
-
-        if (token.endsWith('ss') || token.endsWith('us') || token.endsWith('is')) {
-            return token;
-        }
-
-        if (token.endsWith('s')) {
-            return token.slice(0, -1);
-        }
-
-        return token;
-    }
-
     private uniqueTokens (tokens: string[]): string[] {
         return [...new Set(tokens)];
     }
 
     private fieldScore (queryTokens: string[], field: string): number {
-        const fieldTokens = this.toTokens(field);
+        const fieldTokens = toSearchTokens(field);
         const totalLength = queryTokens.length + fieldTokens.length;
 
         const lcs = this.longestCommonSubsequence(queryTokens, fieldTokens);

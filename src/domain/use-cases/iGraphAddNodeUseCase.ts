@@ -19,5 +19,6 @@ export type GraphAddNodeUseCaseParams = {
 export type GraphAddNodeUseCaseResponse = {
     success: boolean;
     node?: Node;
+    similarNodes?: Node[];
     error?: string;
 };

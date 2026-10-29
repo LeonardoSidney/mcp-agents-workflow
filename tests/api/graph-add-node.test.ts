@@ -100,4 +100,74 @@ describe('MCP server - graph-add-node', () => {
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('Invalid commit SHA');
     });
+
+    test('lists a similar existing node of the same type after creating the node', async () => {
+        const graph = await addProject('Similar Node Project', 'Project used to warn about similar nodes');
+        const existing = await addNode(graph.id, 'SOLUTION', 'Unique project names on graph-add', 'Name uniqueness guard');
+
+        const result = await callTool('graph-add-node', {
+            graphId: graph.id,
+            type: 'SOLUTION',
+            title: 'graph-add refuses duplicate project names',
+            description: 'Another take on the same guard'
+        });
+        expect(result.isError).toBeFalsy();
+
+        const text = textOf(result);
+        expect(text).toMatch(/^Node created successfully: [0-9a-f]{24}\n/);
+        expect(text).toContain(`Similar existing SOLUTION nodes, check for a duplicate: ${existing.id} "Unique project names on graph-add"`);
+
+        const saved = await nodesCollection.find({}).toArray();
+        expect(saved).toHaveLength(2);
+    });
+
+    test('adds no similar-node line when nothing similar exists', async () => {
+        const graph = await addProject('Unique Node Project', 'Project used to verify the warning stays silent');
+        await addNode(graph.id, 'SOLUTION', 'Plural folding in search', 'Search tokens fold plurals');
+
+        const result = await callTool('graph-add-node', {
+            graphId: graph.id,
+            type: 'SOLUTION',
+            title: 'Usage counters for analytics',
+            description: 'Unrelated solution'
+        });
+
+        expect(textOf(result)).toMatch(/^Node created successfully: [0-9a-f]{24}$/);
+    });
+
+    test('does not warn about a similar node of another type', async () => {
+        const graph = await addProject('Cross Type Project', 'Project used to ignore task and solution pairs');
+        await addNode(graph.id, 'TASK', 'Lean search output with bestEdge', 'The task');
+
+        const result = await callTool('graph-add-node', {
+            graphId: graph.id,
+            type: 'SOLUTION',
+            title: 'Lean search output with responsible bestEdge',
+            description: 'The solution of that task'
+        });
+
+        expect(textOf(result)).not.toContain('Similar existing');
+    });
+
+    test('warns about a same-type node anchored to overlapping paths', async () => {
+        const graph = await addProject('Path Overlap Project', 'Project used to warn on overlapping paths');
+        const anchored = await callTool('graph-add-node', {
+            graphId: graph.id,
+            type: 'CONSTRAINT',
+            title: 'Tool schema pitfall',
+            description: 'Anchored to the MCP folder',
+            paths: ['src/mcp']
+        });
+        const anchoredId = idOf(anchored);
+
+        const result = await callTool('graph-add-node', {
+            graphId: graph.id,
+            type: 'CONSTRAINT',
+            title: 'Zod strips unknown keys',
+            description: 'Anchored to one MCP file',
+            paths: ['src/mcp/nodeTools.ts']
+        });
+
+        expect(textOf(result)).toContain(`${anchoredId} "Tool schema pitfall"`);
+    });
 });

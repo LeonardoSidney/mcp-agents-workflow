@@ -6,6 +6,7 @@ export interface INodeRepository {
     addNode (params: AddNodeRepositoryParams): Promise<void>;
     getNode (params: GetNodeRepositoryParams): Promise<NodeWithMemos | null>;
     getNodes (params: GetNodesRepositoryParams): Promise<NodeWithEdges[]>;
+    getNodesWithoutEdges (params: GetNodesRepositoryParams): Promise<Node[]>;
     getNodesWithMemos (params: GetNodesRepositoryParams): Promise<NodeWithMemos[]>;
     updateNode (params: UpdateNodeRepositoryParams): Promise<boolean>;
     deleteNode (params: DeleteNodeRepositoryParams): Promise<boolean>;

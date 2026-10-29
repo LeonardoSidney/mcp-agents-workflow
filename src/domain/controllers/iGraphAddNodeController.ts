@@ -19,5 +19,6 @@ export type GraphAddNodeControllerParams = {
 export type GraphAddNodeControllerResponse = {
     success: boolean;
     node?: NodeSummary;
+    similarNodesNotice?: string;
     error?: string;
 };

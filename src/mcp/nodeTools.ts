@@ -71,8 +71,9 @@ export function registerNodeTools (server: McpServer): void {
             const controller = await graphAddNodeController();
             const response = await controller.handle({ graphId, type, title, description, status, paths, commit });
 
+            const similarNodesLine = response.similarNodesNotice ? `\n${response.similarNodesNotice}` : '';
             const text = response.success && response.node
-                ? `Node created successfully: ${response.node.id}`
+                ? `Node created successfully: ${response.node.id}${similarNodesLine}`
                 : `Failed to add node: ${response.error ?? 'Unknown error'}`;
 
             return {

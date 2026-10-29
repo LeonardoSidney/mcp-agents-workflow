@@ -15,6 +15,7 @@ import { GraphUpdateEdgeController } from '@adapters/controllers/graph/graphUpda
 import { GraphUpdateNodeController } from '@adapters/controllers/graph/graphUpdateNodeController.ts';
 import { ConsoleLogger } from '@adapters/logger/consoleLogger.ts';
 import { NoopLogger } from '@adapters/logger/noopLogger.ts';
+import { GraphAddNodePresentation } from '@adapters/presentation/graph/graphAddNodePresentation.ts';
 import { GraphGetNodesPresentation } from '@adapters/presentation/graph/graphGetNodesPresentation.ts';
 import { GraphSearchNodesPresentation } from '@adapters/presentation/graph/graphSearchNodesPresentation.ts';
 import { EdgeRepository } from '@application/repository/edgeRepository.ts';
@@ -27,6 +28,7 @@ import { GraphAddService } from '@application/services/graph/graphAddService.ts'
 import { GraphEdgeService } from '@application/services/graph/graphEdgeService.ts';
 import { GraphNodeAnchorService } from '@application/services/graph/graphNodeAnchorService.ts';
 import { GraphSearchNodesService } from '@application/services/graph/graphSearchNodesService.ts';
+import { GraphSimilarNodesService } from '@application/services/graph/graphSimilarNodesService.ts';
 import { GraphUpdateNodeService } from '@application/services/graph/graphUpdateNodeService.ts';
 import { GraphAddEdgeUseCase } from '@application/use-cases/graph/graphAddEdgeUseCase.ts';
 import { GraphAddNodeUseCase } from '@application/use-cases/graph/graphAddNodeUseCase.ts';
@@ -95,8 +97,10 @@ export async function graphAddNodeController (): Promise<GraphAddNodeController>
     const nodeRepository = new NodeRepository(databaseGateway);
     const graphAddNodeService = new GraphAddNodeService();
     const graphNodeAnchorService = new GraphNodeAnchorService();
-    const graphAddNodeUseCase = new GraphAddNodeUseCase(logger, graphAddNodeService, graphNodeAnchorService, projectRepository, nodeRepository);
-    return new GraphAddNodeController(logger, graphAddNodeUseCase);
+    const graphSimilarNodesService = new GraphSimilarNodesService(graphNodeAnchorService);
+    const graphAddNodeUseCase = new GraphAddNodeUseCase(logger, graphAddNodeService, graphNodeAnchorService, graphSimilarNodesService, projectRepository, nodeRepository);
+    const graphAddNodePresentation = new GraphAddNodePresentation();
+    return new GraphAddNodeController(logger, graphAddNodeUseCase, graphAddNodePresentation);
 }
 
 export async function graphUpdateNodeController (): Promise<GraphUpdateNodeController> {

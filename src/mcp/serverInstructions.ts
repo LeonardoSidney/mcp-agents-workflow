@@ -80,6 +80,9 @@ at milestones, not at every step.
 - Search before creating a SOLUTION or CONSTRAINT and link to an
   existing node instead of duplicating it. An edge description says why
   the two nodes are related.
+- When graph-add-node lists similar existing nodes, check them. If one
+  already holds the same knowledge, delete the new node (it has no edges
+  yet) and append to the existing one instead.
 - Mark a node completed only after the work was verified.
 
 ## Stale knowledge
@@ -113,7 +116,7 @@ export const GRAPH_GET_PROJECT_NAME_FIELD = 'Project name for an exact match. Fo
 export const GRAPH_DELETE_PROJECT_DESCRIPTION = 'Delete a project from the agent workflow graph by id (24-hex ObjectId)';
 export const GRAPH_DELETE_PROJECT_ID_FIELD = 'Project id to delete (24-hex ObjectId)';
 
-export const GRAPH_ADD_NODE_DESCRIPTION = 'Create a node in an existing graph for knowledge worth keeping beyond this session: a user decision or constraint, a rejected or failed approach, a non-obvious solution or discovery, or a TASK that spans several turns or may be interrupted. Search first and reuse an existing node instead of duplicating it. Nodes, edges, and memos are independent records: create edges explicitly when relationships must be preserved.';
+export const GRAPH_ADD_NODE_DESCRIPTION = 'Create a node in an existing graph for knowledge worth keeping beyond this session: a user decision or constraint, a rejected or failed approach, a non-obvious solution or discovery, or a TASK that spans several turns or may be interrupted. Search first and reuse an existing node instead of duplicating it; the response also lists up to 3 existing nodes of the same type with a similar title or overlapping paths, so a duplicate can be undone right away. Nodes, edges, and memos are independent records: create edges explicitly when relationships must be preserved.';
 export const GRAPH_ADD_NODE_GRAPH_ID_FIELD = 'Graph (project) id this node belongs to (24-hex ObjectId)';
 export const GRAPH_ADD_NODE_TYPE_FIELD = 'Node type';
 export const GRAPH_ADD_NODE_TITLE_FIELD = 'Node title: short (under 10 words) and unique within the graph, carrying the searchable tokens of the work (e.g. "invoice export finance validation"), no filler';
