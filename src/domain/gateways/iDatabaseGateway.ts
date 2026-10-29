@@ -63,7 +63,7 @@ export type ListNodeGatewayParams = {
 
 export type ListNodesGatewayParams = {
     graphId: string;
-    type?: NodeType;
+    types?: NodeType[];
     status?: NodeStatus;
     limit?: number;
 };

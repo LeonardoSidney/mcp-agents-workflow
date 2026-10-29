@@ -24,7 +24,7 @@ export type GetNodeRepositoryParams = {
 
 export type GetNodesRepositoryParams = {
     graphId: string;
-    type?: NodeType;
+    types?: NodeType[];
     status?: NodeStatus;
     limit?: number;
 };

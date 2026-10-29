@@ -8,7 +8,7 @@ export interface IGraphGetNodesUseCase {
 
 export type GraphGetNodesUseCaseParams = {
     graphId: string;
-    type?: NodeType;
+    types?: NodeType[];
     status?: NodeStatus;
     limit?: number;
 };

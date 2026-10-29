@@ -126,7 +126,7 @@ export class NodeRepository implements INodeRepository {
     private async listNodeDocuments (params: GetNodesRepositoryParams) {
         return this.databaseGateway.listNodes({
             graphId: params.graphId,
-            type: params.type,
+            types: params.types,
             status: params.status,
             limit: params.limit
         });

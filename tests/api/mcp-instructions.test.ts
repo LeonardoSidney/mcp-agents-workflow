@@ -28,6 +28,14 @@ describe('MCP server instructions', () => {
         expect(text).toContain('Do not fall back to listing every node');
     });
 
+    test('leaves listing all workspace rules to the agent judgment', () => {
+        const text = instructions();
+
+        expect(text).toContain('For broad or cross-cutting work, or when the user asks');
+        expect(text).toContain('"USER_DECISION", "CONSTRAINT"');
+        expect(text).toContain('judge whether the task needs it');
+    });
+
     test('treats recalled knowledge as a lead behind the code and the user', () => {
         expect(instructions()).toContain('Recalled knowledge is a lead, not the truth');
     });

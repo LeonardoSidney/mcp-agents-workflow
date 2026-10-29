@@ -23,6 +23,11 @@ Before a request that changes code, makes a decision or investigates a
 problem, call graph-search-nodes once or twice. Skip recall for small
 talk and for questions answerable from what is already in front of you.
 
+- User decisions and constraints come up through these searches like
+  any other node. For broad or cross-cutting work, or when the user asks,
+  list all workspace rules at once with graph-get-nodes, types
+  ["USER_DECISION", "CONSTRAINT"]; it costs more as rules accumulate, so
+  judge whether the task needs it.
 - Query with 1-3 short English tokens naming the domain, component or
   problem (e.g. "search tokens", "memo types"). Tokens are ANDed, so
   fewer tokens find more.
@@ -127,9 +132,9 @@ export const GRAPH_EDIT_MEMO_DESCRIPTION = 'Reclassify the type of an existing m
 export const GRAPH_EDIT_MEMO_ID_FIELD = 'Memo id to reclassify (24-hex ObjectId)';
 export const GRAPH_EDIT_MEMO_TYPE_FIELD = 'New memo type: "note" (not searchable), "resolution" (searchable) or "directive" (searchable)';
 
-export const GRAPH_GET_NODES_DESCRIPTION = 'List nodes in a graph for a justified broad inspection or recovery operation. Prefer graph-search-nodes and graph-get-node for targeted retrieval. Do not use this operation as routine bootstrap or merely because a targeted search returned no results. When broad inspection is necessary, apply type, status, and limit filters whenever supported. Each node comes with its description and its outgoing edges as type, targetId and targetTitle; edge descriptions and memo text are read with graph-get-node.';
+export const GRAPH_GET_NODES_DESCRIPTION = 'List nodes in a graph for a justified broad inspection or recovery operation. Prefer graph-search-nodes and graph-get-node for targeted retrieval. Do not use this operation as routine bootstrap or merely because a targeted search returned no results; listing the workspace rules with types ["USER_DECISION", "CONSTRAINT"] is worth it for broad or cross-cutting work. When broad inspection is necessary, apply type, status, and limit filters whenever supported. Each node comes with its description and its outgoing edges as type, targetId and targetTitle; edge descriptions and memo text are read with graph-get-node.';
 export const GRAPH_GET_NODES_GRAPH_ID_FIELD = 'Graph (project) id whose nodes should be listed (24-hex ObjectId)';
-export const GRAPH_GET_NODES_TYPE_FIELD = 'Only return nodes of this type (omit for all types)';
+export const GRAPH_GET_NODES_TYPES_FIELD = 'Only return nodes of these types (e.g. ["USER_DECISION", "CONSTRAINT"] for the workspace rules); omit for all types';
 export const GRAPH_GET_NODES_STATUS_FIELD = 'Only return nodes with this status (omit for all statuses)';
 export const GRAPH_GET_NODES_LIMIT_FIELD = 'Maximum number of nodes to return (omit for no limit)';
 

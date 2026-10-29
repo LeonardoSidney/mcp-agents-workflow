@@ -69,7 +69,7 @@ describe('MCP server - graph-get-nodes', () => {
 
         const result = await callTool('graph-get-nodes', {
             graphId: graph.id,
-            type: 'TASK',
+            types: ['TASK'],
             status: 'pending'
         });
         expect(result.isError).toBeFalsy();
@@ -101,7 +101,7 @@ describe('MCP server - graph-get-nodes', () => {
         const graph = await addProject('Empty Filter Project', 'Project with a single node');
         await addNode(graph.id, 'TASK', 'Only task', 'The only node');
 
-        const result = await callTool('graph-get-nodes', { graphId: graph.id, type: 'GOAL' });
+        const result = await callTool('graph-get-nodes', { graphId: graph.id, types: ['GOAL'] });
         expect(result.isError).toBeFalsy();
 
         const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; }[];
@@ -112,10 +112,52 @@ describe('MCP server - graph-get-nodes', () => {
         const graph = await addProject('Invalid Filter Project', 'Project used for an invalid filter');
         await addNode(graph.id, 'TASK', 'Some task', 'Some task description');
 
-        const result = await callTool('graph-get-nodes', { graphId: graph.id, type: 'NOT_A_TYPE' });
+        const result = await callTool('graph-get-nodes', { graphId: graph.id, types: ['NOT_A_TYPE'] });
 
         expect(result.isError).toBe(true);
         expect(textOf(result)).toContain('Invalid arguments');
+    });
+
+    test('refuses an empty list of types', async () => {
+        const graph = await addProject('Empty Types Project', 'Project used for an empty types filter');
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id, types: [] });
+
+        expect(result.isError).toBe(true);
+        expect(textOf(result)).toContain('Invalid arguments');
+    });
+
+    test('lists the workspace rules across several types in one call', async () => {
+        const graph = await addProject('Rules Project', 'Project used to list user decisions and constraints together');
+        const decision = await addNode(graph.id, 'USER_DECISION', 'Graph content is English', 'User rule on language');
+        const constraint = await addNode(graph.id, 'CONSTRAINT', 'Search tokens are ANDed', 'Durable search contract');
+        await addNode(graph.id, 'TASK', 'Unrelated task', 'Not a rule');
+        await addNode(graph.id, 'SOLUTION', 'Unrelated solution', 'Not a rule either');
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id, types: ['USER_DECISION', 'CONSTRAINT'] });
+        expect(result.isError).toBeFalsy();
+
+        const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; }[];
+        expect(nodes.map(node => node.id).sort()).toEqual([decision.id, constraint.id].sort());
+    });
+
+    test('combines several types with a status filter', async () => {
+        const graph = await addProject('Rules Status Project', 'Project used to combine types with status');
+        const pendingDecision = await addNode(graph.id, 'USER_DECISION', 'Pending decision', 'Still under discussion');
+        const completedConstraint = await callTool('graph-add-node', {
+            graphId: graph.id,
+            type: 'CONSTRAINT',
+            title: 'Completed constraint',
+            description: 'Settled rule',
+            status: 'completed'
+        });
+        expect(completedConstraint.isError).toBeFalsy();
+
+        const result = await callTool('graph-get-nodes', { graphId: graph.id, types: ['USER_DECISION', 'CONSTRAINT'], status: 'pending' });
+        expect(result.isError).toBeFalsy();
+
+        const nodes = JSON.parse(textOf(result).slice(textOf(result).indexOf('['))) as { id: string; }[];
+        expect(nodes.map(node => node.id)).toEqual([pendingDecision.id]);
     });
 
     test('keeps memo discussions out of the node list', async () => {

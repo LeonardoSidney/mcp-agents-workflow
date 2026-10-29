@@ -32,7 +32,7 @@ import {
     GRAPH_GET_NODES_GRAPH_ID_FIELD,
     GRAPH_GET_NODES_LIMIT_FIELD,
     GRAPH_GET_NODES_STATUS_FIELD,
-    GRAPH_GET_NODES_TYPE_FIELD,
+    GRAPH_GET_NODES_TYPES_FIELD,
     GRAPH_SEARCH_NODES_DESCRIPTION,
     GRAPH_SEARCH_NODES_GRAPH_ID_FIELD,
     GRAPH_SEARCH_NODES_LIMIT_FIELD,
@@ -140,14 +140,14 @@ export function registerNodeTools (server: McpServer): void {
             description: GRAPH_GET_NODES_DESCRIPTION,
             inputSchema: z.object({
                 graphId: objectId.describe(GRAPH_GET_NODES_GRAPH_ID_FIELD),
-                type: z.enum(NODE_TYPE_VALUES).optional().describe(GRAPH_GET_NODES_TYPE_FIELD),
+                types: z.array(z.enum(NODE_TYPE_VALUES)).min(1).optional().describe(GRAPH_GET_NODES_TYPES_FIELD),
                 status: z.enum(NODE_STATUS_VALUES).optional().describe(GRAPH_GET_NODES_STATUS_FIELD),
                 limit: z.number().int().positive().optional().describe(GRAPH_GET_NODES_LIMIT_FIELD)
             })
         },
-        async ({ graphId, type, status, limit }) => {
+        async ({ graphId, types, status, limit }) => {
             const controller = await graphGetNodesController();
-            const response = await controller.handle({ graphId, type, status, limit });
+            const response = await controller.handle({ graphId, types, status, limit });
 
             const text = response.success
                 ? `Nodes:\n${JSON.stringify(response.nodes ?? [], null, 4)}`

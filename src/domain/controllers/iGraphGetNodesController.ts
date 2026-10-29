@@ -8,7 +8,7 @@ export interface IGraphGetNodesController {
 
 export type GraphGetNodesControllerParams = {
     graphId: string;
-    type?: NodeType;
+    types?: NodeType[];
     status?: NodeStatus;
     limit?: number;
 };

@@ -22,9 +22,9 @@ export class GraphGetNodesController implements IGraphGetNodesController {
     async handle (params: GraphGetNodesControllerParams): Promise<GraphGetNodesControllerResponse> {
         this.logger.info('Executing GraphGetNodesController::handle', params);
 
-        const { graphId, type, status, limit } = params;
+        const { graphId, types, status, limit } = params;
 
-        const response = await this.useCase.execute({ graphId, type, status, limit });
+        const response = await this.useCase.execute({ graphId, types, status, limit });
 
         const nodes = this.presentNodes(response.nodes);
 

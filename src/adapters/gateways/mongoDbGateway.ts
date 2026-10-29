@@ -187,8 +187,8 @@ export class MongoDBGateway implements IDatabaseGateway {
         const collection = this.client.db().collection<RawNodeDocument>('nodes');
         const filter: Filter<RawNodeDocument> = { graph_id: new ObjectId(params.graphId), deleted_at: { $exists: false } };
 
-        if (params.type) {
-            filter.type = params.type;
+        if (params.types && params.types.length > 0) {
+            filter.type = { $in: params.types };
         }
 
         if (params.status) {

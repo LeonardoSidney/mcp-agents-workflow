@@ -21,10 +21,11 @@ export class GraphGetNodesUseCase implements IGraphGetNodesUseCase {
     async execute (params: GraphGetNodesUseCaseParams): Promise<GraphGetNodesUseCaseResponse> {
         this.logger.info('Executing GraphGetNodesUseCase::execute');
 
-        if (!params.graphId?.trim()) {
+        const validationError = this.validate(params);
+        if (validationError) {
             return {
                 success: false,
-                error: 'A non-empty graph id is required'
+                error: validationError
             };
         }
 
@@ -38,7 +39,7 @@ export class GraphGetNodesUseCase implements IGraphGetNodesUseCase {
 
         const nodes = await this.nodeRepository.getNodes({
             graphId: params.graphId,
-            type: params.type,
+            types: params.types,
             status: params.status,
             limit: params.limit
         });
@@ -47,5 +48,13 @@ export class GraphGetNodesUseCase implements IGraphGetNodesUseCase {
             success: true,
             nodes
         };
+    }
+
+    private validate (params: GraphGetNodesUseCaseParams): string | undefined {
+        if (!params.graphId?.trim()) {
+            return 'A non-empty graph id is required';
+        }
+
+        return undefined;
     }
 }
