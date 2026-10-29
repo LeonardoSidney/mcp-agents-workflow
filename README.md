@@ -99,22 +99,22 @@ The server exposes **15 tools** across three toolsets:
 | `graph-get-node`       | Fetch a node by id, including its outgoing edges (each carrying the target node title) and its memos, optionally filtered by memo type (e.g. ["resolution", "directive"])                             |
 | `graph-update-node`    | Partially update a node's title, description or status                                                                                                                                                |
 | `graph-delete-node`    | Delete a node (refused while edges are still attached)                                                                                                                                                |
-| `graph-search-nodes`   | Exact token search (not semantic, diacritics-insensitive) across titles, descriptions, edge memories and the searchable memos (`resolution`, `directive`); each hit adds its best matching `bestMemo` |
+| `graph-search-nodes`   | Exact token search (not semantic, diacritics-insensitive, regular plurals folded) across titles, descriptions, edge memories and the searchable memos (`resolution`, `directive`); each hit adds its best matching `bestMemo` |
 | `graph-append-memo`    | Append an attributed, typed discussion entry to a node (`note`, `resolution` or `directive`; `type` is required)                                                                                      |
 | `graph-add-edge`       | Add a typed, first-class edge between two nodes, with a memory in its description                                                                                                                     |
 | `graph-update-edge`    | Partially update an edge's type or description                                                                                                                                                        |
 | `graph-delete-edge`    | Delete an edge by id (refused while the edge is the only reference to its target node, so the target never gets orphaned)                                                                             |
 | `graph-edit-memo`      | Reclassify the type of an existing memo by id (24-hex ObjectId); the memo text and author stay immutable and never change                                                                             |
 
-On top of the tools, the server sends rich **instructions** to the MCP client at session start: the session bootstrap (locate or create the workspace project), the read-then-write workflow, query phrasing for `graph-search-nodes`, and how to classify, attribute and reclassify memos — so even a model that has never seen the graph behaves sensibly with it.
+On top of the tools, the server sends short **instructions** to the MCP client at session start: the once-per-session bootstrap (locate or create the workspace project), when recall is worth a search, what is worth writing back (and what the code or git history already holds), how to correct stale knowledge, and how to classify and attribute memos. The graph is best-effort: the user's instructions take precedence, and a graph failure never blocks the user's task.
 
 ## How the agent adopts it
 
 No per-workspace setup is needed. The convention is **one project per workspace, named after the workspace**, and the server instructions make the first session self-bootstrap:
 
 1. The agent looks up the project named after the current workspace with `graph-get-project` by exact name — a miss means it does not exist yet, so the agent creates it with `graph-add`.
-2. It reads the context (`graph-get-nodes`, `graph-search-nodes`) before working — picking up decisions, rules and resolutions recorded by past sessions.
-3. Before finishing, it writes back: finished work (`TASK` → `SOLUTION`), user rules (memos attributed to `user`), and lessons learned.
+2. Before non-trivial work it searches the graph (`graph-search-nodes`, then `graph-get-node` on promising hits) — picking up decisions, rules, rejected approaches and resolutions recorded by past sessions, and treating them as leads checked against the code.
+3. It writes back only what the repository cannot hold — user decisions and rules, rejected or failed approaches, non-obvious solutions, and unfinished work another session may resume — scaled to the size of the work, and links outdated knowledge to its replacement with `SUPERSEDES`.
 
 Onboarding a new repository therefore ends with the [Setup](#setup) above: point the client at the server, and the first agent session builds the memory. Every later session — even on another machine, or from a teammate who shares the same database — inherits it, re-deriving the workspace project by name.
 

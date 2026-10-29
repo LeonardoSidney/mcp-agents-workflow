@@ -279,6 +279,69 @@ describe('GraphSearchNodesService', () => {
         expect(results.map(result => result.node.id)).toEqual(['n1']);
     });
 
+    test('matches a singular query token against a plural field token', () => {
+        const node = buildNode({ id: 'n1', title: 'Server instructions rewrite', description: '' });
+
+        const response = service.scoreNodes({ text: 'instruction', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results.map(result => result.node.id)).toEqual(['n1']);
+    });
+
+    test('matches a plural query token against a singular field token', () => {
+        const node = buildNode({ id: 'n1', title: 'Edge type guard', description: '' });
+
+        const response = service.scoreNodes({ text: 'edges', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results.map(result => result.node.id)).toEqual(['n1']);
+    });
+
+    test('folds an -ies plural into its -y singular', () => {
+        const node = buildNode({ id: 'n1', title: 'Search query fallback', description: '' });
+
+        const response = service.scoreNodes({ text: 'queries', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results.map(result => result.node.id)).toEqual(['n1']);
+    });
+
+    test('folds an -sses plural into its -ss singular', () => {
+        const node = buildNode({ id: 'n1', title: 'Process lifecycle', description: '' });
+
+        const response = service.scoreNodes({ text: 'processes', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results.map(result => result.node.id)).toEqual(['n1']);
+    });
+
+    test('keeps tokens ending in -ss, -us or -is intact', () => {
+        const node = buildNode({ id: 'n1', title: 'Clas statu analys', description: '' });
+
+        const response = service.scoreNodes({ text: 'class status analysis', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results).toEqual([]);
+    });
+
+    test('keeps tokens of three characters or fewer intact', () => {
+        const node = buildNode({ id: 'n1', title: 'Bu ga', description: '' });
+
+        const response = service.scoreNodes({ text: 'bus gas', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results).toEqual([]);
+    });
+
+    test('keeps the full score when the query and the field differ only by plural form', () => {
+        const node = buildNode({ id: 'n1', title: 'Memo types', description: '' });
+
+        const response = service.scoreNodes({ text: 'memos type', nodes: [node] });
+
+        const results = expectScored(response);
+        expect(results[0]).toMatchObject({ titleScore: 1 });
+    });
+
     test('dedupes repeated query tokens before scoring', () => {
         const node = buildNode({ id: 'n1', title: 'Carro porta', description: '' });
 
